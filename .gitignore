@@ -12,3 +12,6 @@ backend/.mvn/apache-maven-*/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+
+# Build output (Maven).
+backend/target/
