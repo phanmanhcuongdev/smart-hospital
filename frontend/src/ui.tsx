@@ -1,0 +1,142 @@
+import { useEffect, useState, type ReactNode } from "react";
+
+// Shared UI helpers for the EMR and HR screens.
+
+export function errText(e: unknown): string {
+  return e instanceof Error ? e.message : "Unexpected error.";
+}
+
+export interface LoadState<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+}
+
+export function useAsync<T>(load: () => Promise<T>, deps: unknown[]): LoadState<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    load()
+      .then((v) => {
+        if (alive) {
+          setData(v);
+          setLoading(false);
+        }
+      })
+      .catch((e: unknown) => {
+        if (alive) {
+          setError(errText(e));
+          setLoading(false);
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [tick, ...deps]);
+  return { data, loading, error, reload: () => setTick((t) => t + 1) };
+}
+
+export function fmtDateTime(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return value;
+  }
+  return d.toLocaleString();
+}
+
+export function fmtDate(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+  return value;
+}
+
+export function shortId(id: string | null | undefined): string {
+  if (id === null || id === undefined) {
+    return "-";
+  }
+  return id.length > 13 ? id.slice(0, 8) + "..." : id;
+}
+
+// Convert a datetime-local input value to an ISO instant.
+export function toInstant(local: string): string {
+  if (local === "") {
+    return "";
+  }
+  return local.length === 16 ? local + ":00Z" : local;
+}
+
+export function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+export function ErrorBanner({ error }: { error: string | null }) {
+  if (error === null || error === "") {
+    return null;
+  }
+  return (
+    <p role="alert" className="error">
+      {error}
+    </p>
+  );
+}
+
+export function EmptyNote({ text }: { text: string }) {
+  return <p className="muted">{text}</p>;
+}
+
+export function SubmitRow({ busy, label, onCancel }: { busy: boolean; label: string; onCancel?: () => void }) {
+  return (
+    <div className="row">
+      <button className="btn" type="submit" disabled={busy}>
+        {busy ? "Working..." : label}
+      </button>
+      {onCancel ? (
+        <button className="btn" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export function Badge({ tone, children }: { tone: string; children: ReactNode }) {
+  return <span className={"badge badge-" + tone}>{children}</span>;
+}
+
+export function toneFor(status: string): string {
+  const ok = ["ACTIVE", "VALID", "COMPLETED", "OPEN", "LOCKED", "CONFIRMED", "APPLIED", "VERIFIED", "CLOSED"];
+  const bad = ["EXPIRED", "REJECTED", "QUARANTINED", "CANCELLED", "TERMINATED", "REVOKED", "FAILED", "NO_SHOW"];
+  if (ok.includes(status)) {
+    return "ok";
+  }
+  if (bad.includes(status)) {
+    return "bad";
+  }
+  return "warn";
+}
+
+export function useForm(initial: Record<string, string>): [Record<string, string>, (key: string, value: string) => void, () => void] {
+  const [form, setForm] = useState<Record<string, string>>(initial);
+  const set = (key: string, value: string): void => {
+    setForm((f) => ({ ...f, [key]: value }));
+  };
+  const reset = (): void => {
+    setForm(initial);
+  };
+  return [form, set, reset];
+}
