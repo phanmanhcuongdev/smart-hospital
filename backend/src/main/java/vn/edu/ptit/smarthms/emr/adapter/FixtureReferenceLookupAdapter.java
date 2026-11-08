@@ -1,5 +1,6 @@
 package vn.edu.ptit.smarthms.emr.adapter;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -22,5 +23,12 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
     public boolean practitionerExists(UUID id) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
                 "select exists(select 1 from hr.employee where employee_id = ?)", Boolean.class, id));
+    }
+
+    @Override
+    public Optional<String> activeMedicationLabel(UUID id) {
+        return jdbc.query(
+                "select display_name from ref.medication_fixture where medication_id = ? and is_active",
+                (rs, n) -> rs.getString(1), id).stream().findFirst();
     }
 }
