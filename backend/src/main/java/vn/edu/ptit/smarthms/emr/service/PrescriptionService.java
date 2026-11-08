@@ -69,7 +69,7 @@ public class PrescriptionService {
         List<MedicationFixture> drugs = new ArrayList<>();
         for (PrescriptionItemRequest item : request.items()) {
             MedicationFixture drug = medications.findById(item.medicationId())
-                    .orElseThrow(() -> new NotFoundException("Medication not found: " + item.medicationId()));
+                    .orElseThrow(() -> NotFoundException.forId("Medication", item.medicationId()));
             if (drug.isActive() == false) {
                 throw new ValidationException("Medication is not active: " + drug.getDisplayName());
             }
@@ -178,12 +178,12 @@ public class PrescriptionService {
 
     private MedicalEncounter requireEncounter(UUID encounterId) {
         return encounters.findById(encounterId)
-                .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
+                .orElseThrow(() -> NotFoundException.forId("Encounter", encounterId));
     }
 
     private Prescription requirePrescription(UUID prescriptionId) {
         return prescriptions.findById(prescriptionId)
-                .orElseThrow(() -> new NotFoundException("Prescription not found: " + prescriptionId));
+                .orElseThrow(() -> NotFoundException.forId("Prescription", prescriptionId));
     }
 
     private UUID requireAttending(Actor actor, MedicalEncounter encounter) {

@@ -48,14 +48,13 @@ public class EmploymentService {
         actor.requireRole("HR_SPECIALIST");
         Employee employee = requireEmployee(employeeId);
         Department department = departments.findById(request.departmentId())
-                .orElseThrow(() -> new NotFoundException("Department not found: "
-                        + request.departmentId()));
+                .orElseThrow(() -> NotFoundException.forId("Department", request.departmentId()));
         if (department.isActive() == false) {
             throw new ValidationException("Department is not active: " + department.getDepartmentCode());
         }
         if (request.roleProfileId() != null
                 && roleProfiles.findById(request.roleProfileId()).isEmpty()) {
-            throw new NotFoundException("Role profile not found: " + request.roleProfileId());
+            throw NotFoundException.forId("Role profile", request.roleProfileId());
         }
         if (request.decisionRef() != null) {
             PersonnelDecision decision = decisions.findByDecisionRef(request.decisionRef())
@@ -111,6 +110,6 @@ public class EmploymentService {
 
     private Employee requireEmployee(UUID employeeId) {
         return employees.findById(employeeId)
-                .orElseThrow(() -> new NotFoundException("Employee not found: " + employeeId));
+                .orElseThrow(() -> NotFoundException.forId("Employee", employeeId));
     }
 }

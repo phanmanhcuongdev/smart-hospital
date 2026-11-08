@@ -155,12 +155,12 @@ public class LicenseCertificationService {
 
     private LicenseCertification requireCertification(UUID certificationId) {
         return certifications.findById(certificationId)
-                .orElseThrow(() -> new NotFoundException("Certification not found: " + certificationId));
+                .orElseThrow(() -> NotFoundException.forId("Certification", certificationId));
     }
 
     private void requireEmployee(UUID employeeId) {
         if (employees.findById(employeeId).isEmpty()) {
-            throw new NotFoundException("Employee not found: " + employeeId);
+            throw NotFoundException.forId("Employee", employeeId);
         }
     }
 }

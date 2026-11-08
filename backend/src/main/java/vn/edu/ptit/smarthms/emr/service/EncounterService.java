@@ -66,7 +66,7 @@ public class EncounterService {
     public EncounterResponse openEncounter(Actor actor, OpenEncounterRequest request) {
         actor.requireAnyRole("RECEPTION", "DOCTOR");
         PatientFixture patient = patients.findById(request.patientId())
-                .orElseThrow(() -> new NotFoundException("Patient not found: " + request.patientId()));
+                .orElseThrow(() -> NotFoundException.forId("Patient", request.patientId()));
         if (patient.getIdentityStatus() == PatientFixture.IdentityStatus.UNVERIFIED) {
             throw new ValidationException("Patient identity is not verified.");
         }
@@ -236,7 +236,7 @@ public class EncounterService {
 
     public MedicalEncounter requireEncounter(UUID encounterId) {
         return encounters.findById(encounterId)
-                .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
+                .orElseThrow(() -> NotFoundException.forId("Encounter", encounterId));
     }
 
     public UUID resolveDoctorId(Actor actor) {

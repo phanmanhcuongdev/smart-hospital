@@ -1,4 +1,4 @@
-import type { Role } from "./auth";
+import type { Role } from "../auth/auth";
 
 // Authenticated API client for the SmartHMS backend. All requests use HTTP
 // Basic with the demo user credentials (demo environment only).

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
-import type { Auth } from "../api";
-import { addCertification, applyDueDecisions, createDecision, createDepartment, createEmployee, createRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, updateDepartment, updateEmployee, type Certification, type Decision, type Department, type Employee } from "../api";
-import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../ui";
+import type { Auth } from "../../lib/api";
+import { addCertification, applyDueDecisions, createDecision, createDepartment, createEmployee, createRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, updateDepartment, updateEmployee, type Certification, type Decision, type Department, type Employee } from "../../lib/api";
+import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
 
 export type HrTab = "overview" | "certs" | "decisions" | "transfers" | "history";
 export type HrView = { name: "hr-employees" } | { name: "hr-employee"; employeeId: string; tab: HrTab } | { name: "hr-departments" } | { name: "hr-roles" };

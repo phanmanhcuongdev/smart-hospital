@@ -86,6 +86,6 @@ public class DepartmentService {
 
     public Department requireDepartment(UUID departmentId) {
         return departments.findById(departmentId)
-                .orElseThrow(() -> new NotFoundException("Department not found: " + departmentId));
+                .orElseThrow(() -> NotFoundException.forId("Department", departmentId));
     }
 }

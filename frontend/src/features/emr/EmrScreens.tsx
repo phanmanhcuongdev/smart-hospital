@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
-import type { Auth } from "../api";
-import { addAddendum, addDiagnosis, addVitals, archiveRecord, confirmAddendum, createOrder, createPrescription, encounterAction, getEncounterDetail, listAddenda, listResults, listVersions, lockRecord, listEncounters, openEncounter, orderAction, prescriptionAction, receiveResult, submitRecord, type Addendum, type CResult, type Encounter, type EncounterDetail, type Prescription, type RecordVersion } from "../api";
-import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../ui";
+import type { Auth } from "../../lib/api";
+import { addAddendum, addDiagnosis, addVitals, archiveRecord, confirmAddendum, createOrder, createPrescription, encounterAction, getEncounterDetail, listAddenda, listResults, listVersions, lockRecord, listEncounters, openEncounter, orderAction, prescriptionAction, receiveResult, submitRecord, type Addendum, type CResult, type Encounter, type EncounterDetail, type Prescription, type RecordVersion } from "../../lib/api";
+import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
 
 export type EmrTab = "overview" | "vitals" | "orders" | "results" | "prescriptions" | "record" | "addenda";
 export type EmrView = { name: "emr-list" } | { name: "emr-detail"; encounterId: string; tab: EmrTab };

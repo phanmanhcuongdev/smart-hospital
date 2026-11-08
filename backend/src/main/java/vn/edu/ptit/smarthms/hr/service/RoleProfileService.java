@@ -54,6 +54,6 @@ public class RoleProfileService {
 
     public RoleProfile requireRoleProfile(UUID roleProfileId) {
         return roleProfiles.findById(roleProfileId)
-                .orElseThrow(() -> new NotFoundException("Role profile not found: " + roleProfileId));
+                .orElseThrow(() -> NotFoundException.forId("Role profile", roleProfileId));
     }
 }

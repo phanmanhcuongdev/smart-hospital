@@ -55,14 +55,13 @@ public class EmployeeService {
             throw new ConflictException("Employee code already exists: " + request.employeeCode());
         }
         Department department = departments.findById(request.departmentId())
-                .orElseThrow(() -> new NotFoundException("Department not found: "
-                        + request.departmentId()));
+                .orElseThrow(() -> NotFoundException.forId("Department", request.departmentId()));
         if (department.isActive() == false) {
             throw new ValidationException("Department is not active: " + department.getDepartmentCode());
         }
         if (request.roleProfileId() != null
                 && roleProfiles.findById(request.roleProfileId()).isEmpty()) {
-            throw new NotFoundException("Role profile not found: " + request.roleProfileId());
+            throw NotFoundException.forId("Role profile", request.roleProfileId());
         }
         Instant startAt = request.hireDate() == null ? Instant.now()
                 : request.hireDate().atStartOfDay(ZoneOffset.UTC).toInstant();
@@ -180,7 +179,7 @@ public class EmployeeService {
 
     public Employee requireEmployee(UUID employeeId) {
         return employees.findById(employeeId)
-                .orElseThrow(() -> new NotFoundException("Employee not found: " + employeeId));
+                .orElseThrow(() -> NotFoundException.forId("Employee", employeeId));
     }
 
     private boolean matchesJobTitle(UUID employeeId, String jobTitle) {

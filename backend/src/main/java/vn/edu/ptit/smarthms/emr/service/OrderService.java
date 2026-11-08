@@ -169,12 +169,12 @@ public class OrderService {
 
     public MedicalOrder requireOrder(UUID orderId) {
         return orders.findById(orderId)
-                .orElseThrow(() -> new NotFoundException("Order not found: " + orderId));
+                .orElseThrow(() -> NotFoundException.forId("Order", orderId));
     }
 
     private MedicalEncounter requireEncounter(UUID encounterId) {
         return encounters.findById(encounterId)
-                .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
+                .orElseThrow(() -> NotFoundException.forId("Encounter", encounterId));
     }
 
     private UUID requireAttending(Actor actor, MedicalEncounter encounter) {

@@ -132,7 +132,7 @@ public class MedicalRecordService {
     public AddendumResponse confirmAddendum(Actor actor, UUID addendumId) {
         actor.requireAnyRole("DOCTOR", "RECORDS_MANAGER");
         Addendum addendum = addenda.findById(addendumId)
-                .orElseThrow(() -> new NotFoundException("Addendum not found: " + addendumId));
+                .orElseThrow(() -> NotFoundException.forId("Addendum", addendumId));
         MedicalRecord record = requireRecord(addendum.getRecordId());
         requireCanChange(actor, record);
         if (addendum.getConfirmationStatus() != Addendum.ConfirmationStatus.DRAFT) {
@@ -174,7 +174,7 @@ public class MedicalRecordService {
 
     private MedicalRecord requireRecord(UUID recordId) {
         return records.findById(recordId)
-                .orElseThrow(() -> new NotFoundException("Medical record not found: " + recordId));
+                .orElseThrow(() -> NotFoundException.forId("Medical record", recordId));
     }
 
     private MedicalRecord requireRecordByEncounter(UUID encounterId) {
@@ -184,7 +184,7 @@ public class MedicalRecordService {
 
     private MedicalEncounter requireEncounter(UUID encounterId) {
         return encounters.findById(encounterId)
-                .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
+                .orElseThrow(() -> NotFoundException.forId("Encounter", encounterId));
     }
 
     private void requireCanChange(Actor actor, MedicalRecord record) {

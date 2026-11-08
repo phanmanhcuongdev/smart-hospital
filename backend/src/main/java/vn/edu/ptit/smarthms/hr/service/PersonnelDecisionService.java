@@ -177,11 +177,11 @@ public class PersonnelDecisionService {
 
     private PersonnelDecision requireDecision(UUID decisionId) {
         return decisions.findById(decisionId)
-                .orElseThrow(() -> new NotFoundException("Decision not found: " + decisionId));
+                .orElseThrow(() -> NotFoundException.forId("Decision", decisionId));
     }
 
     public Employee requireEmployee(UUID employeeId) {
         return employees.findById(employeeId)
-                .orElseThrow(() -> new NotFoundException("Employee not found: " + employeeId));
+                .orElseThrow(() -> NotFoundException.forId("Employee", employeeId));
     }
 }

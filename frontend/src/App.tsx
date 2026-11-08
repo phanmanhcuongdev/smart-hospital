@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ApiError, health, listDepartments, type Auth } from "./api";
-import { DEMO_USERS, demoUser, isClinical, isHr } from "./auth";
-import { EmrScreens, type EmrView } from "./emr/EmrScreens";
-import { HrScreens, type HrView } from "./hr/HrScreens";
-import { ErrorBanner, Field, SubmitRow, errText } from "./ui";
+import { ApiError, health, listDepartments, type Auth } from "./lib/api";
+import { DEMO_USERS, demoUser, isClinical, isHr } from "./auth/auth";
+import { EmrScreens, type EmrView } from "./features/emr/EmrScreens";
+import { HrScreens, type HrView } from "./features/hr/HrScreens";
+import { ErrorBanner, Field, SubmitRow, errText } from "./components/ui/ui";
 
 type View = EmrView | HrView;
 
