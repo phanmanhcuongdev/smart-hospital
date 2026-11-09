@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 type Health = { status: string; timestamp: string };
 
@@ -52,7 +52,7 @@ export function App() {
   const [auditEvents, setAuditEvents] = useState<AuditEventItem[]>([]);
   const [lastLog, setLastLog] = useState<ApiLog | null>(null);
 
-  useEffect(() => {
+  const checkHealth = useCallback(() => {
     fetch(healthUrl)
       .then(async (response) => {
         if (!response.ok) throw new Error('Health check failed');
@@ -64,6 +64,16 @@ export function App() {
       })
       .catch(() => setState('error'));
   }, []);
+
+  useEffect(() => {
+    checkHealth();
+  }, [checkHealth]);
+
+  useEffect(() => {
+    if (state !== 'error') return;
+    const timer = setInterval(checkHealth, 4000);
+    return () => clearInterval(timer);
+  }, [state, checkHealth]);
 
   async function callApi(
     method: string,
@@ -87,6 +97,13 @@ export function App() {
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined
       });
+
+      if (response.status > 0 && response.status !== 502 && response.status !== 504) {
+        setHealth({ status: 'UP', timestamp: new Date().toISOString() });
+        setState('ready');
+      } else if (response.status === 502 || response.status === 504) {
+        setState('error');
+      }
 
       const correlationId = response.headers?.get?.('X-Correlation-Id') ?? null;
       let payload: unknown = null;
@@ -161,7 +178,7 @@ export function App() {
           <h1>SmartHMS</h1>
           <p>V.1 &amp; V.2 Console — Authentication, RBAC, Audit Trail &amp; Standardized Error Handling</p>
         </div>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {state === 'loading' && (
             <span className="health-badge" role="status">
               Checking system health…
@@ -173,9 +190,14 @@ export function App() {
             </span>
           )}
           {state === 'error' && (
-            <span className="health-badge down" role="alert">
-              Backend is unavailable. Check Docker Compose logs.
-            </span>
+            <>
+              <span className="health-badge down" role="alert">
+                Backend is unavailable. Check Docker Compose logs.
+              </span>
+              <button type="button" className="btn-outline" onClick={checkHealth}>
+                Thử lại
+              </button>
+            </>
           )}
         </div>
       </header>
