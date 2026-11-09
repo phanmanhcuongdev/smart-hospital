@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: smarthms-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5439/smarthms}
+    username: ${DATABASE_USERNAME:smarthms}
+    password: ${DATABASE_PASSWORD:smarthms_local_only}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    schemas: ref,hr,sys,emr
+    default-schema: public
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 10
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+logging:
+  level:
+    root: INFO
+
+app:
+  security:
+    session-ttl-hours: 8
+    token-cleanup-interval-minutes: 60

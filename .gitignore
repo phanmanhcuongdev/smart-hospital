@@ -1,0 +1,14 @@
+# Local secrets and machine-specific configuration. Keep documented examples tracked.
+.env
+.env.*
+!.env.example
+*.local
+
+# Diagnostic output must not become a source of sensitive data.
+*.log
+
+# Downloaded Maven distribution used by the local wrapper.
+backend/.mvn/apache-maven-*/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
