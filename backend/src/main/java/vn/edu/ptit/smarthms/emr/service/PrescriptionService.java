@@ -29,13 +29,16 @@ public class PrescriptionService {
     private final PrescriptionItemRepository items;
     private final MedicalEncounterRepository encounters;
     private final ReferenceLookupPort lookup;
+    private final RecordLockGuard lockGuard;
 
     public PrescriptionService(PrescriptionRepository prescriptions, PrescriptionItemRepository items,
-                               MedicalEncounterRepository encounters, ReferenceLookupPort lookup) {
+                               MedicalEncounterRepository encounters, ReferenceLookupPort lookup,
+                               RecordLockGuard lockGuard) {
         this.prescriptions = prescriptions;
         this.items = items;
         this.encounters = encounters;
         this.lookup = lookup;
+        this.lockGuard = lockGuard;
     }
 
     @Transactional
@@ -71,7 +74,7 @@ public class PrescriptionService {
                                 String route, String frequency, int daysCount, BigDecimal quantity,
                                 String unitCode) {
         findEncounter(encounterId);
-        Prescription p = find(encounterId, prescriptionId);
+        Prescription p = findForUpdate(encounterId, prescriptionId);
         if (p.getStatus() != Prescription.Status.DRAFT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot add items when prescription is " + p.getStatus());
@@ -91,7 +94,7 @@ public class PrescriptionService {
     @Transactional
     public Prescription issue(UUID encounterId, UUID prescriptionId) {
         findEncounter(encounterId);
-        Prescription p = find(encounterId, prescriptionId);
+        Prescription p = findForUpdate(encounterId, prescriptionId);
         if (p.getStatus() != Prescription.Status.DRAFT) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot issue prescription when it is " + p.getStatus());
@@ -106,7 +109,7 @@ public class PrescriptionService {
     @Transactional
     public Prescription cancel(UUID encounterId, UUID prescriptionId) {
         findEncounter(encounterId);
-        Prescription p = find(encounterId, prescriptionId);
+        Prescription p = findForUpdate(encounterId, prescriptionId);
         if (!p.canCancel()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot cancel prescription when it is " + p.getStatus());
@@ -118,6 +121,12 @@ public class PrescriptionService {
     private MedicalEncounter findEncounter(UUID id) {
         return encounters.findById(id).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Encounter not found"));
+    }
+
+    /** Dùng cho thao tác ghi: chặn khi hồ sơ đã nộp/khóa. */
+    private Prescription findForUpdate(UUID encounterId, UUID prescriptionId) {
+        lockGuard.assertEditable(encounterId);
+        return find(encounterId, prescriptionId);
     }
 
     private Prescription find(UUID encounterId, UUID prescriptionId) {

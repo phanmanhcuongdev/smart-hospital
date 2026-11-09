@@ -22,10 +22,13 @@ public class OrderService {
 
     private final MedicalOrderRepository orders;
     private final MedicalEncounterRepository encounters;
+    private final RecordLockGuard lockGuard;
 
-    public OrderService(MedicalOrderRepository orders, MedicalEncounterRepository encounters) {
+    public OrderService(MedicalOrderRepository orders, MedicalEncounterRepository encounters,
+                        RecordLockGuard lockGuard) {
         this.orders = orders;
         this.encounters = encounters;
+        this.lockGuard = lockGuard;
     }
 
     @Transactional
@@ -49,6 +52,7 @@ public class OrderService {
     @Transactional
     public MedicalOrder changeStatus(UUID encounterId, UUID orderId, MedicalOrder.Status next) {
         findEncounter(encounterId);
+        lockGuard.assertEditable(encounterId);
         MedicalOrder o = orders.findById(orderId)
                 .filter(x -> x.getEncounterId().equals(encounterId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));

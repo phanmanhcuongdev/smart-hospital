@@ -37,6 +37,31 @@ public class MedicalRecord {
         return r;
     }
 
+        public void advanceVersion(String actor) {
+        this.currentVersion++;
+        this.rowVersion++;
+        this.updatedAt = OffsetDateTime.now();
+        this.updatedBy = actor;
+    }
+
+    public void submitForSignature(String actor) {
+        this.recordStatus = RecordStatus.PENDING_SIGNATURE;
+        this.rowVersion++;
+        this.updatedAt = OffsetDateTime.now();
+        this.updatedBy = actor;
+    }
+
+    public void lock(UUID userId, String actor) {
+        OffsetDateTime now = OffsetDateTime.now();
+        this.recordStatus = RecordStatus.LOCKED;
+        this.lockedAt = now;
+        this.lockedBy = userId;
+        this.rowVersion++;
+        this.updatedAt = now;
+        this.updatedBy = actor;
+    }
+
+    public UUID getLockedBy() { return lockedBy; }
     public UUID getRecordId() { return recordId; }
     public UUID getEncounterId() { return encounterId; }
     public RecordStatus getRecordStatus() { return recordStatus; }
