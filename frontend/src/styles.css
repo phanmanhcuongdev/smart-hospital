@@ -204,3 +204,13 @@ tr.row-attention td:first-child { box-shadow: inset 4px 0 0 var(--warn-border); 
 .stat-card > span { display: block; }
 .auth-card { margin: 0; }
 .sidebar-status { flex-wrap: wrap; row-gap: var(--space-1); }
+
+/* Language switcher (Vietnamese / English). */
+.lang-switcher { display: inline-flex; align-items: center; gap: 2px; padding: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; flex-shrink: 0; }
+.lang-switcher-btn { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .85rem; padding: .45rem .6rem; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.lang-switcher-btn:hover { color: var(--text); }
+.lang-switcher-btn.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 700; }
+.auth-lang { display: flex; justify-content: flex-end; margin-bottom: var(--space-3); }
+@media (max-width: 900px) {
+  .lang-switcher-btn { padding: .4rem .45rem; font-size: .8rem; }
+}

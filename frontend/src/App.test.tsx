@@ -39,20 +39,20 @@ describe("App", () => {
     stubFetch();
     sessionStorage.clear();
     render(<App />);
-    expect(screen.getByText("Sign in (demo)")).toBeInTheDocument();
-    expect(await screen.findByText("Backend status: UP")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(await screen.findByText("Encounters (SCR-EMR-01)")).toBeInTheDocument();
-    expect(await screen.findByText("No encounters yet.")).toBeInTheDocument();
+    expect(screen.getByText("Đăng nhập (demo)")).toBeInTheDocument();
+    expect(await screen.findByText("Trạng thái backend: UP")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
+    expect(await screen.findByText("Lượt khám (SCR-EMR-01)")).toBeInTheDocument();
+    expect(await screen.findByText("Chưa có lượt khám nào.")).toBeInTheDocument();
   });
 
   it("signs in an HR user and shows the employee list", async () => {
     stubFetch();
     sessionStorage.clear();
     render(<App />);
-    fireEvent.change(screen.getByLabelText("Demo user"), { target: { value: "demo-hr" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(await screen.findByRole("heading", { name: "Employees" })).toBeInTheDocument();
-    expect(await screen.findByText("No employees match the search.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Người dùng demo"), { target: { value: "demo-hr" } });
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
+    expect(await screen.findByRole("heading", { name: "Nhân viên" })).toBeInTheDocument();
+    expect(await screen.findByText("Không có nhân viên nào khớp với tìm kiếm.")).toBeInTheDocument();
   });
 });

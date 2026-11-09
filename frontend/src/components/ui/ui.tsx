@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
+ import { currentLocale, t, tf } from "../../lib/i18n";
 
 // Shared UI helpers for the EMR and HR screens.
 
 export function errText(e: unknown): string {
-  return e instanceof Error ? e.message : "Unexpected error.";
+  return e instanceof Error ? e.message : t("Unexpected error.");
 }
 
 export interface LoadState<T> {
@@ -50,14 +51,20 @@ export function fmtDateTime(value: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) {
     return value;
   }
-  return d.toLocaleString();
+  return d.toLocaleString(currentLocale());
 }
 
 export function fmtDate(value: string | null | undefined): string {
   if (value === null || value === undefined || value === "") {
     return "-";
   }
-  return value;
+  const dateOnly = value.length === 10 && value[4] === "-" && value[7] === "-";
+  const d = dateOnly ? new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10)))
+    : new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return value;
+  }
+  return d.toLocaleDateString(currentLocale());
 }
 
 export function shortId(id: string | null | undefined): string {
@@ -157,7 +164,7 @@ export function FilterChips({ label, options, value, onChange }: { label: string
 }
 
 export function ResultCount({ shown, total, noun }: { shown: number; total: number; noun: string }) {
-  return <p className="result-count" role="status">Showing {shown} of {total} {noun}</p>;
+  return <p className="result-count" role="status">{tf("Showing {shown} of {total} {noun}", { shown, total, noun })}</p>;
 }
 
 export function StatCard({ label, value, detail, action, onSelect }: { label: string; value: number | string; detail: string; action: string; onSelect: () => void }) {

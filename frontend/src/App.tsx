@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LanguageSwitcher, statusLabel, t, tf } from "./lib/i18n";
 import type { FormEvent } from "react";
 import { ApiError, health, listDecisions, listDepartments, listEncounters, listRoleProfiles, searchEmployees } from "./lib/api";
 import type { Auth, Decision, Department, Employee, Encounter } from "./lib/api";
@@ -108,11 +109,12 @@ export function App() {
         <main className="auth-card">
           <div className="auth-brand">
             <span className="sidebar-brand-mark" aria-hidden="true">+</span>
-            <span><span className="sidebar-brand-name">SmartHMS</span><br /><span className="sidebar-brand-sub">Hospital Management</span></span>
+            <span><span className="sidebar-brand-name">{t("SmartHMS")}</span><br /><span className="sidebar-brand-sub">{t("Hospital Management")}</span></span>
           </div>
-          <h1>SmartHMS</h1>
-          <p>Smart Hospital Management System - demo environment.</p>
-          <p>Backend status: {healthStatus}</p>
+                    <div className="auth-lang"><LanguageSwitcher /></div>
+          <h1>{t("SmartHMS")}</h1>
+          <p>{t("Smart Hospital Management System - demo environment.")}</p>
+          <p>{t("Backend status:")} {healthStatus}</p>
           {healthError !== null ? <ErrorBanner error={healthError} /> : null}
           <LoginForm onSignIn={signIn} />
         </main>
@@ -123,28 +125,28 @@ export function App() {
   const clinical = isClinical(auth.role);
   const hr = isHr(auth.role);
   const nav: NavEntry[] = [
-    { id: "overview", label: "Overview", group: "Overview", icon: "⌂", active: view.name === "overview", onSelect: () => setView({ name: "overview" }) },
+    { id: "overview", label: t("Overview"), group: t("Overview"), icon: "⌂", active: view.name === "overview", onSelect: () => setView({ name: "overview" }) },
     ...(clinical ? [
-      { id: "emr-list", label: "Encounters", group: "EMR", icon: "▦", active: view.name === "emr-list" || view.name === "emr-detail", onSelect: () => setView({ name: "emr-list" }) },
-      { id: "emr-results", label: "Labs & results", group: "EMR", icon: "◍", active: view.name === "emr-detail" && view.tab === "results", onSelect: () => { void goToEncounterTab("results"); } },
-      { id: "emr-record", label: "Medical records", group: "EMR", icon: "▤", active: view.name === "emr-detail" && view.tab === "record", onSelect: () => { void goToEncounterTab("record"); } },
+      { id: "emr-list", label: t("Encounters"), group: t("EMR"), icon: "▦", active: view.name === "emr-list" || view.name === "emr-detail", onSelect: () => setView({ name: "emr-list" }) },
+      { id: "emr-results", label: t("Labs & results"), group: t("EMR"), icon: "◍", active: view.name === "emr-detail" && view.tab === "results", onSelect: () => { void goToEncounterTab("results"); } },
+      { id: "emr-record", label: t("Medical records"), group: t("EMR"), icon: "▤", active: view.name === "emr-detail" && view.tab === "record", onSelect: () => { void goToEncounterTab("record"); } },
     ] : []),
     ...(hr ? [
-      { id: "hr-employees", label: "Employee directory", group: "HR", icon: "👥", active: view.name === "hr-employees" || view.name === "hr-employee", onSelect: () => setView({ name: "hr-employees" }) },
-      { id: "hr-departments", label: "Departments", group: "HR", icon: "🏢", active: view.name === "hr-departments", onSelect: () => setView({ name: "hr-departments" }) },
-      { id: "hr-roles", label: "Role profiles", group: "HR", icon: "🪪", active: view.name === "hr-roles", onSelect: () => setView({ name: "hr-roles" }) },
-      { id: "hr-decisions", label: "Pending decisions", group: "HR", icon: "✋", active: false, badge: pendingCount, onSelect: () => { void goToPendingDecisions(); } },
+      { id: "hr-employees", label: t("Employee directory"), group: t("HR"), icon: "👥", active: view.name === "hr-employees" || view.name === "hr-employee", onSelect: () => setView({ name: "hr-employees" }) },
+      { id: "hr-departments", label: t("Departments"), group: t("HR"), icon: "🏢", active: view.name === "hr-departments", onSelect: () => setView({ name: "hr-departments" }) },
+      { id: "hr-roles", label: t("Role profiles"), group: t("HR"), icon: "🪪", active: view.name === "hr-roles", onSelect: () => setView({ name: "hr-roles" }) },
+      { id: "hr-decisions", label: t("Pending decisions"), group: t("HR"), icon: "✋", active: false, badge: pendingCount, onSelect: () => { void goToPendingDecisions(); } },
     ] : []),
   ];
   const bottomNav: NavEntry[] = clinical
     ? [nav[0], nav[1], nav[2], nav[3]].filter((e): e is NavEntry => e !== undefined)
     : [nav[0], nav[1], nav[2], nav[4]].filter((e): e is NavEntry => e !== undefined);
   const fab = view.name === "emr-list" && (auth.role === "DOCTOR" || auth.role === "RECEPTION")
-    ? { label: "Open encounter", onClick: primaryAction }
+    ? { label: t("Open encounter"), onClick: primaryAction }
     : view.name === "hr-employees" && hr
-    ? { label: "Add employee", onClick: primaryAction }
+    ? { label: t("Add employee"), onClick: primaryAction }
     : view.name === "hr-departments" && hr
-    ? { label: "Add department", onClick: primaryAction }
+    ? { label: t("Add department"), onClick: primaryAction }
     : null;
 
   return (
@@ -188,47 +190,47 @@ function Overview({ auth, healthStatus, go }: { auth: Auth; healthStatus: string
   const latest = [...(encounters ?? [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
   return (
-    <section aria-label="Overview">
-      <h2>Overview</h2>
-      <p className="overview-lead">Live summary of the records you can access. Every card opens the section it summarises. Backend status: {healthStatus}</p>
+    <section aria-label={t("Overview")}>
+      <h2>{t("Overview")}</h2>
+      <p className="overview-lead">{t("Live summary of the records you can access. Every card opens the section it summarises.")} {t("Backend status:")} {healthStatus}</p>
       {error !== null ? <ErrorBanner error={error} /> : null}
       <div className="stat-grid">
         {isClinical(auth.role) && (
           <>
-            <StatCard label="Encounters" value={encounters === null ? "-" : encounters.length} detail={encounters === null ? "Loading" : inProgress.length + " in progress - " + completed.length + " completed"} action="Open encounters" onSelect={() => go({ name: "emr-list" })} />
-            <StatCard label="In progress" value={inProgress.length} detail="Encounters currently open" action="Open encounters" onSelect={() => go({ name: "emr-list" })} />
-            <StatCard label="Latest encounter" value={latest === undefined ? "-" : latest.id.slice(0, 8)} detail={latest === undefined ? "No encounters yet." : "Patient " + latest.patientId.slice(0, 8) + " - " + latest.status} action="Open latest" onSelect={() => { if (latest !== undefined) go({ name: "emr-detail", encounterId: latest.id, tab: "overview" }); else go({ name: "emr-list" }); }} />
+            <StatCard label={t("Encounters")} value={encounters === null ? "-" : encounters.length} detail={encounters === null ? t("Loading") : tf("{inProgress} in progress - {completed} completed", { inProgress: inProgress.length, completed: completed.length })} action="Open encounters" onSelect={() => go({ name: "emr-list" })} />
+            <StatCard label={t("In progress")} value={inProgress.length} detail={t("Encounters currently open")} action={t("Open encounters")} onSelect={() => go({ name: "emr-list" })} />
+            <StatCard label={t("Latest encounter")} value={latest === undefined ? "-" : latest.id.slice(0, 8)} detail={latest === undefined ? "No encounters yet." : "Patient " + latest.patientId.slice(0, 8) + " - " + latest.status} action="Open latest" onSelect={() => { if (latest !== undefined) go({ name: "emr-detail", encounterId: latest.id, tab: "overview" }); else go({ name: "emr-list" }); }} />
           </>
         )}
         {isHr(auth.role) && (
           <>
-            <StatCard label="Employees" value={employees === null ? "-" : employees.length} detail="Staff records you can access" action="Open employees" onSelect={() => go({ name: "hr-employees" })} />
-            <StatCard label="Departments" value={departments === null ? "-" : departments.length} detail="Active and inactive departments" action="Open departments" onSelect={() => go({ name: "hr-departments" })} />
-            <StatCard label="Role profiles" value={roleCount === null ? "-" : roleCount} detail="Defined roles and their rules" action="Open role profiles" onSelect={() => go({ name: "hr-roles" })} />
-            <StatCard label="Pending decisions" value={pending.length} detail="Decisions waiting for a second approver" action="Review decisions" onSelect={() => go({ name: "hr-employees" })} />
+            <StatCard label={t("Employees")} value={employees === null ? "-" : employees.length} detail={t("Staff records you can access")} action={t("Open employees")} onSelect={() => go({ name: "hr-employees" })} />
+            <StatCard label={t("Departments")} value={departments === null ? "-" : departments.length} detail={t("Active and inactive departments")} action={t("Open departments")} onSelect={() => go({ name: "hr-departments" })} />
+            <StatCard label={t("Role profiles")} value={roleCount === null ? "-" : roleCount} detail={t("Defined roles and their rules")} action={t("Open role profiles")} onSelect={() => go({ name: "hr-roles" })} />
+            <StatCard label={t("Pending decisions")} value={pending.length} detail={t("Decisions waiting for a second approver")} action={t("Review decisions")} onSelect={() => go({ name: "hr-employees" })} />
           </>
         )}
       </div>
-      <h3>Needs attention</h3>
+      <h3>{t("Needs attention")}</h3>
       {isClinical(auth.role) && (
         <div>
-          {encounters === null && <p className="muted">Loading encounters</p>}
-          {encounters !== null && inProgress.length === 0 && <p className="muted">No encounters in progress.</p>}
+          {encounters === null && <p className="muted">{t("Loading encounters")}</p>}
+          {encounters !== null && inProgress.length === 0 && <p className="muted">{t("No encounters in progress.")}</p>}
           {inProgress.slice(0, 5).map((e) => (
             <div key={e.id} className="card card-nested">
-              <strong>Encounter {e.id.slice(0, 8)}</strong> - Patient {e.patientId.slice(0, 8)} - {e.status}
-              <div><button type="button" className="btn btn-small" onClick={() => go({ name: "emr-detail", encounterId: e.id, tab: "overview" })}>Open encounter</button></div>
+              <strong>{t("Encounter")} {e.id.slice(0, 8)}</strong> - {t("Patient")} {e.patientId.slice(0, 8)} - {statusLabel(e.status)}
+              <div><button type="button" className="btn btn-small" onClick={() => go({ name: "emr-detail", encounterId: e.id, tab: "overview" })}>{t("Open encounter")}</button></div>
             </div>
           ))}
         </div>
       )}
       {isHr(auth.role) && (
         <div>
-          {pending.length === 0 && <p className="muted">No pending decisions.</p>}
+          {pending.length === 0 && <p className="muted">{t("No pending decisions.")}</p>}
           {pending.slice(0, 5).map((d) => (
             <div key={d.id} className="card card-nested">
-              <strong>{d.decisionRef}</strong> - {d.decisionType} - {d.decisionStatus}
-              <div><button type="button" className="btn btn-small" onClick={() => go({ name: "hr-employee", employeeId: d.employeeId, tab: "decisions" })}>Review decision</button></div>
+              <strong>{d.decisionRef}</strong> - {statusLabel(d.decisionType)} - {statusLabel(d.decisionStatus)}
+              <div><button type="button" className="btn btn-small" onClick={() => go({ name: "hr-employee", employeeId: d.employeeId, tab: "decisions" })}>{t("Review decision")}</button></div>
             </div>
           ))}
         </div>
@@ -246,7 +248,7 @@ function LoginForm({ onSignIn }: { onSignIn: (next: Auth) => void }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const user = demoUser(username);
-    if (user === undefined) { setError("Unknown demo user."); return; }
+    if (user === undefined) { setError(t("Unknown demo user.")); return; }
     setBusy(true);
     setError(null);
     const candidate: Auth = { username: user.username, password, role: user.role, label: user.label };
@@ -254,7 +256,7 @@ function LoginForm({ onSignIn }: { onSignIn: (next: Auth) => void }) {
       await listDepartments(candidate);
       onSignIn(candidate);
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 401) setError("Wrong password. The demo password is the one configured by SMARTHMS_DEMO_PASSWORD (default demo).");
+      if (err instanceof ApiError && err.status === 401) setError(t("Wrong password. The demo password is the one configured by SMARTHMS_DEMO_PASSWORD (default demo)."));
       else if (err instanceof ApiError && err.status === 403) onSignIn(candidate);
       else setError(errText(err));
     } finally { setBusy(false); }
@@ -262,23 +264,23 @@ function LoginForm({ onSignIn }: { onSignIn: (next: Auth) => void }) {
 
   return (
     <form onSubmit={submit}>
-      <h2>Sign in (demo)</h2>
-      <Field label="Demo user">
+      <h2>{t("Sign in (demo)")}</h2>
+      <Field label={t("Demo user")}>
         <select value={username} onChange={(e) => setUsername(e.target.value)}>
           {DEMO_USERS.map((u) => (
-            <option key={u.username} value={u.username}>{u.label} ({u.role})</option>
+            <option key={u.username} value={u.username}>{u.label} ({statusLabel(u.role)})</option>
           ))}
         </select>
       </Field>
-      <Field label="Password">
+      <Field label={t("Password")}>
         <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       {error !== null && <ErrorBanner error={error} />}
-      <SubmitRow busy={busy} label="Sign in" />
-      <p><strong>Demo accounts: </strong>"demo" is the password for every account.</p>
+      <SubmitRow busy={busy} label={t("Sign in")} />
+      <p><strong>{t("Demo accounts:")}</strong>"demo" {t("is the password for every account.")}</p>
       <ul className="demo-list">
         {DEMO_USERS.map((u) => (
-          <li key={u.username}><strong>{u.username}</strong> — {u.label} — {u.role}</li>
+          <li key={u.username}><strong>{u.username}</strong> — {u.label} — {statusLabel(u.role)}</li>
         ))}
       </ul>
     </form>

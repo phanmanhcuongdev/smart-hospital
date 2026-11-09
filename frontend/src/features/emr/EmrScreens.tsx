@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { statusLabel, t, tf } from "../../lib/i18n";
 import type { Auth } from "../../lib/api";
 import { addAddendum, addDiagnosis, addVitals, archiveRecord, confirmAddendum, createOrder, createPrescription, encounterAction, getEncounterDetail, listAddenda, listResults, listVersions, lockRecord, listEncounters, openEncounter, orderAction, prescriptionAction, receiveResult, submitRecord, type Addendum, type CResult, type Encounter, type EncounterDetail, type Prescription, type RecordVersion } from "../../lib/api";
 import { Badge, EmptyNote, ErrorBanner, Field, FilterChips, ResultCount, SubmitRow, errText, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
@@ -32,8 +33,8 @@ function EncounterList({ auth, go }: { auth: Auth; go: (v: EmrView) => void }) {
   const canOpen = auth.role === "DOCTOR" || auth.role === "RECEPTION";
   return (
     <section>
-      <h2>Encounters (SCR-EMR-01)</h2>
-      <p className="muted">Encounters visible to {auth.label}. Doctors see only their own encounters.</p>
+      <h2>{t("Encounters (SCR-EMR-01)")}</h2>
+      <p className="muted">{tf("Encounters visible to {name}. Doctors see only their own encounters.", { name: auth.label })}</p>
       {canOpen ? (
         <button className="btn" type="button" onClick={() => setShowForm(true)}>
           Open encounter
@@ -52,16 +53,16 @@ function EncounterList({ auth, go }: { auth: Auth; go: (v: EmrView) => void }) {
           onCancel={() => setShowForm(false)}
         />
       ) : null}
-      {list.loading ? <p role="status">Loading encounters...</p> : null}
+      {list.loading ? <p role="status">{t("Loading encounters...")}</p> : null}
       <ErrorBanner error={list.error} />
       {list.data !== null && list.data.length > 0 ? (
         <>
-          <FilterChips label="Filter encounters by status" value={statusFilter} onChange={setStatusFilter} options={[{ value: "ALL", label: "All", count: allEncounters.length }, ...encounterStatuses.map((s) => ({ value: s, label: s.split("_").join(" "), count: allEncounters.filter((e) => e.status === s).length }))]} />
-          <ResultCount shown={shownEncounters.length} total={allEncounters.length} noun="encounters" />
+          <FilterChips label={t("Filter encounters by status")} value={statusFilter} onChange={setStatusFilter} options={[{ value: "ALL", label: t("All"), count: allEncounters.length }, ...encounterStatuses.map((s) => ({ value: s, label: statusLabel(s), count: allEncounters.filter((e) => e.status === s).length }))]} />
+          <ResultCount shown={shownEncounters.length} total={allEncounters.length} noun={t("encounters")} />
         </>
       ) : null}
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text="No encounters yet." /> : null}
-      {list.data !== null && list.data.length > 0 && shownEncounters.length === 0 ? <EmptyNote text="No encounters match this status." /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No encounters yet.")} /> : null}
+      {list.data !== null && list.data.length > 0 && shownEncounters.length === 0 ? <EmptyNote text={t("No encounters match this status.")} /> : null}
       {shownEncounters.length > 0 ? <EncounterTable encounters={shownEncounters} go={go} /> : null}
     </section>
   );
@@ -73,13 +74,13 @@ function EncounterTable({ encounters, go }: { encounters: Encounter[]; go: (v: E
       <table className="table">
         <thead>
           <tr>
-            <th>Encounter</th>
-            <th>Patient</th>
-            <th>Attending</th>
-            <th>Status</th>
-            <th>Started</th>
-            <th>Opened by</th>
-            <th>Row</th>
+            <th>{t("Encounter")}</th>
+            <th>{t("Patient")}</th>
+            <th>{t("Attending")}</th>
+            <th>{t("Status")}</th>
+            <th>{t("Started")}</th>
+            <th>{t("Opened by")}</th>
+            <th>{t("Row")}</th>
             <th></th>
           </tr>
         </thead>
@@ -89,7 +90,7 @@ function EncounterTable({ encounters, go }: { encounters: Encounter[]; go: (v: E
               <td>{shortId(e.id)}</td>
               <td>{shortId(e.patientId)}</td>
               <td>{shortId(e.attendingEmployeeId)}</td>
-              <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
+              <td><Badge tone={toneFor(e.status)}>{statusLabel(e.status)}</Badge></td>
               <td>{fmtDateTime(e.startedAt)}</td>
               <td>{e.createdBy}</td>
               <td>{e.rowVersion}</td>
@@ -130,19 +131,19 @@ function OpenEncounterForm({ auth, onDone, onCancel }: { auth: Auth; onDone: (id
   }
   return (
     <form className="card" onSubmit={submit}>
-      <h3>Open encounter</h3>
-      <p className="muted">The patient must be VERIFIED. Demo patient: Synthetic Patient ({SEED_PATIENT}). Demo attending: EMP-DEMO-001 ({SEED_EMPLOYEE}).</p>
-      <Field label="Patient ID">
+      <h3>{t("Open encounter")}</h3>
+      <p className="muted">{t("The patient must be VERIFIED. Demo patient:")} Synthetic Patient ({SEED_PATIENT}). {t("Demo attending:")} EMP-DEMO-001 ({SEED_EMPLOYEE}).</p>
+      <Field label={t("Patient ID")}>
         <input value={form.patientId} onChange={(e) => set("patientId", e.target.value)} required />
       </Field>
-      <Field label="Appointment ID (optional)">
+      <Field label={t("Appointment ID (optional)")}>
         <input value={form.appointmentId} onChange={(e) => set("appointmentId", e.target.value)} />
       </Field>
-      <Field label="Attending employee ID">
+      <Field label={t("Attending employee ID")}>
         <input value={form.attendingEmployeeId} onChange={(e) => set("attendingEmployeeId", e.target.value)} required />
       </Field>
       <ErrorBanner error={error} />
-      <SubmitRow busy={busy} label="Open encounter" onCancel={onCancel} />
+      <SubmitRow busy={busy} label={t("Open encounter")} onCancel={onCancel} />
     </form>
   );
 }
@@ -165,14 +166,14 @@ function EncounterDetailScreen({ auth, encounterId, tab, go }: { auth: Auth; enc
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   if (detail.loading && detail.data === null) {
-    return <p role="status">Loading encounter...</p>;
+    return <p role="status">{t("Loading encounter...")}</p>;
   }
   if (detail.error !== null && detail.data === null) {
     return <ErrorBanner error={detail.error} />;
   }
   const d = detail.data;
   if (d === null) {
-    return <EmptyNote text="Encounter not found." />;
+    return <EmptyNote text={t("Encounter not found.")} />;
   }
   const enc = d.encounter;
   const canDoctor = auth.role === "DOCTOR";
@@ -196,33 +197,33 @@ function EncounterDetailScreen({ auth, encounterId, tab, go }: { auth: Auth; enc
       <h2>Encounter {shortId(enc.id)} (SCR-EMR-02)</h2>
       <dl className="kv">
         <div>
-          <dt>Patient</dt>
+          <dt>{t("Patient")}</dt>
           <dd>{enc.patientId}</dd>
         </div>
         <div>
-          <dt>Attending employee</dt>
+          <dt>{t("Attending employee")}</dt>
           <dd>{shortId(enc.attendingEmployeeId)}</dd>
         </div>
         <div>
-          <dt>Status</dt>
+          <dt>{t("Status")}</dt>
           <dd>
-            <Badge tone={toneFor(enc.status)}>{enc.status}</Badge>
+            <Badge tone={toneFor(enc.status)}>{statusLabel(enc.status)}</Badge>
           </dd>
         </div>
         <div>
-          <dt>Started</dt>
+          <dt>{t("Started")}</dt>
           <dd>{fmtDateTime(enc.startedAt)}</dd>
         </div>
         <div>
-          <dt>Completed</dt>
+          <dt>{t("Completed")}</dt>
           <dd>{fmtDateTime(enc.completedAt)}</dd>
         </div>
         <div>
-          <dt>Row version</dt>
+          <dt>{t("Row version")}</dt>
           <dd>{enc.rowVersion}</dd>
         </div>
         <div>
-          <dt>Opened by</dt>
+          <dt>{t("Opened by")}</dt>
           <dd>{enc.createdBy}</dd>
         </div>
       </dl>
@@ -240,7 +241,7 @@ function EncounterDetailScreen({ auth, encounterId, tab, go }: { auth: Auth; enc
         </div>
       ) : null}
       <ErrorBanner error={actionError} />
-      <nav className="tabs" aria-label="Encounter sections">
+      <nav className="tabs" aria-label={t("Encounter sections")}>
         {(["overview", "vitals", "orders", "results", "prescriptions", "record", "addenda"] as EmrTab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? "tab active" : "tab"} onClick={() => go({ name: "emr-detail", encounterId, tab: t })}>
             {tabLabel(t)}
@@ -261,15 +262,15 @@ function EncounterDetailScreen({ auth, encounterId, tab, go }: { auth: Auth; enc
 function EncounterOverview({ detail }: { detail: EncounterDetail }) {
   return (
     <div>
-      <h3>Overview</h3>
+      <h3>{t("Overview")}</h3>
       <p className="muted">
-        This encounter has {detail.observations.length} vital-sign records, {detail.diagnoses.length} diagnoses, {detail.orders.length} orders and {detail.prescriptions.length} prescriptions.
+        {tf("This encounter has {vital} vital-sign records, {diagnoses} diagnoses, {orders} orders and {prescriptions} prescriptions.", { vital: detail.observations.length, diagnoses: detail.diagnoses.length, orders: detail.orders.length, prescriptions: detail.prescriptions.length })}
       </p>
       <p>
-        Medical record: {detail.record === null ? "not started" : detail.record.status}
+        {t("Medical record:")} {detail.record === null ? t("not started") : statusLabel(detail.record.status)}
         {detail.record !== null ? " (version " + detail.record.currentVersion + ", row " + detail.record.rowVersion + ")" : ""}
       </p>
-      <p className="muted">Completed at {fmtDateTime(detail.encounter.completedAt)}.</p>
+      <p className="muted">{t("Completed at")} {fmtDateTime(detail.encounter.completedAt)}.</p>
     </div>
   );
 }
@@ -301,45 +302,45 @@ function VitalsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
   }
   return (
     <div>
-      <h3>Vitals and diagnosis (SCR-EMR-03)</h3>
+      <h3>{t("Vitals and diagnosis (SCR-EMR-03)")}</h3>
       {isNurse ? (
         <form className="card" onSubmit={submit}>
-          <h4>Record vital sign (nurse)</h4>
-          <Field label="Metric code">
+          <h4>{t("Record vital sign (nurse)")}</h4>
+          <Field label={t("Metric code")}>
             <input value={form.metricCode} onChange={(e) => set("metricCode", e.target.value)} required />
           </Field>
           <div className="row">
-            <Field label="Numeric value">
+            <Field label={t("Numeric value")}>
               <input type="number" step="any" value={form.numericValue} onChange={(e) => set("numericValue", e.target.value)} />
             </Field>
-            <Field label="Unit">
+            <Field label={t("Unit")}>
               <input value={form.unitCode} onChange={(e) => set("unitCode", e.target.value)} />
             </Field>
           </div>
-          <Field label="Text value (optional)">
+          <Field label={t("Text value (optional)")}>
             <input value={form.textValue} onChange={(e) => set("textValue", e.target.value)} />
           </Field>
-          <Field label="Observed at (UTC)">
+          <Field label={t("Observed at (UTC)")}>
             <input type="datetime-local" value={form.observedAt} onChange={(e) => set("observedAt", e.target.value)} required />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Record vital sign" />
+          <SubmitRow busy={busy} label={t("Record vital sign")} />
         </form>
       ) : (
-        <p className="muted">Vital signs can only be recorded by a nurse. You are signed in as {auth.role}.</p>
+        <p className="muted">{t("Vital signs can only be recorded by a nurse. You are signed in as")} {statusLabel(auth.role)}.</p>
       )}
-      {detail.observations.length === 0 ? <EmptyNote text="No vital signs recorded yet." /> : null}
+      {detail.observations.length === 0 ? <EmptyNote text={t("No vital signs recorded yet.")} /> : null}
       {detail.observations.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Metric</th>
-                <th>Value</th>
-                <th>Unit</th>
-                <th>Observed at</th>
-                <th>Source</th>
-                <th>Quality</th>
+                <th>{t("Metric")}</th>
+                <th>{t("Value")}</th>
+                <th>{t("Unit")}</th>
+                <th>{t("Observed at")}</th>
+                <th>{t("Source")}</th>
+                <th>{t("Quality")}</th>
               </tr>
             </thead>
             <tbody>
@@ -350,7 +351,7 @@ function VitalsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
                   <td>{o.unitCode}</td>
                   <td>{fmtDateTime(o.observedAt)}</td>
                   <td>{o.sourceType}</td>
-                  <td><Badge tone={toneFor(o.quality)}>{o.quality}</Badge></td>
+                  <td><Badge tone={toneFor(o.quality)}>{statusLabel(o.quality)}</Badge></td>
                 </tr>
               ))}
             </tbody>
@@ -387,44 +388,44 @@ function DiagnosisPanel({ auth, detail, reload }: { auth: Auth; detail: Encounte
   }
   return (
     <div>
-      <h4>Diagnosis (doctor)</h4>
+      <h4>{t("Diagnosis (doctor)")}</h4>
       {isDoctor ? (
         <form className="card" onSubmit={submit}>
-          <Field label="Type">
+          <Field label={t("Type")}>
             <select value={form.type} onChange={(e) => set("type", e.target.value)}>
-              <option value="PRIMARY">PRIMARY</option>
-              <option value="SECONDARY">SECONDARY</option>
+              <option value="PRIMARY">{t("PRIMARY")}</option>
+              <option value="SECONDARY">{t("SECONDARY")}</option>
             </select>
           </Field>
-          <Field label="ICD-10 code (required for a CONFIRMED diagnosis)">
+          <Field label={t("ICD-10 code (required for a CONFIRMED diagnosis)")}>
             <input value={form.icd10Code} onChange={(e) => set("icd10Code", e.target.value)} />
           </Field>
-          <Field label="Narrative">
+          <Field label={t("Narrative")}>
             <textarea value={form.narrative} onChange={(e) => set("narrative", e.target.value)} required />
           </Field>
-          <Field label="Status">
+          <Field label={t("Status")}>
             <select value={form.status} onChange={(e) => set("status", e.target.value)}>
-              <option value="PROVISIONAL">PROVISIONAL</option>
-              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="PROVISIONAL">{t("PROVISIONAL")}</option>
+              <option value="CONFIRMED">{t("CONFIRMED")}</option>
             </select>
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Record diagnosis" />
+          <SubmitRow busy={busy} label={t("Record diagnosis")} />
         </form>
       ) : (
-        <p className="muted">Diagnoses can only be recorded by a doctor. You are signed in as {auth.role}.</p>
+        <p className="muted">{t("Diagnoses can only be recorded by a doctor. You are signed in as")} {statusLabel(auth.role)}.</p>
       )}
-      {detail.diagnoses.length === 0 ? <EmptyNote text="No diagnoses recorded yet." /> : null}
+      {detail.diagnoses.length === 0 ? <EmptyNote text={t("No diagnoses recorded yet.")} /> : null}
       {detail.diagnoses.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>ICD-10</th>
-                <th>Narrative</th>
-                <th>Status</th>
-                <th>Confirmed by</th>
+                <th>{t("Type")}</th>
+                <th>{t("ICD-10")}</th>
+                <th>{t("Narrative")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Confirmed by")}</th>
               </tr>
             </thead>
             <tbody>
@@ -433,7 +434,7 @@ function DiagnosisPanel({ auth, detail, reload }: { auth: Auth; detail: Encounte
                   <td>{d.type}</td>
                   <td>{d.icd10Code}</td>
                   <td>{d.narrative}</td>
-                  <td><Badge tone={toneFor(d.status)}>{d.status}</Badge></td>
+                  <td><Badge tone={toneFor(d.status)}>{statusLabel(d.status)}</Badge></td>
                   <td>{d.confirmedBy}</td>
                 </tr>
               ))}
@@ -480,39 +481,39 @@ function OrdersPanel({ auth, detail, reload, go, encounterId }: { auth: Auth; de
   }
   return (
     <div>
-      <h3>Clinical orders (SCR-EMR-04)</h3>
+      <h3>{t("Clinical orders (SCR-EMR-04)")}</h3>
       {isDoctor ? (
         <form className="card" onSubmit={submit}>
-          <h4>New order (doctor)</h4>
-          <Field label="Order type">
+          <h4>{t("New order (doctor)")}</h4>
+          <Field label={t("Order type")}>
             <select value={form.type} onChange={(e) => set("type", e.target.value)}>
-              <option value="LAB">LAB</option>
-              <option value="RAD">RAD</option>
+              <option value="LAB">{t("LAB")}</option>
+              <option value="RAD">{t("RAD")}</option>
             </select>
           </Field>
-          <Field label="External order reference (optional)">
+          <Field label={t("External order reference (optional)")}>
             <input value={form.externalOrderRef} onChange={(e) => set("externalOrderRef", e.target.value)} />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Create order" />
+          <SubmitRow busy={busy} label={t("Create order")} />
         </form>
       ) : (
-        <p className="muted">Orders can only be created by a doctor. You are signed in as {auth.role}.</p>
+        <p className="muted">{t("Orders can only be created by a doctor. You are signed in as")} {statusLabel(auth.role)}.</p>
       )}
       <ErrorBanner error={actionError} />
-      {detail.orders.length === 0 ? <EmptyNote text="No orders yet." /> : null}
+      {detail.orders.length === 0 ? <EmptyNote text={t("No orders yet.")} /> : null}
       {detail.orders.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>External ref</th>
-                <th>Ordered by</th>
-                <th>Ordered at</th>
-                <th>Actions</th>
+                <th>{t("Order")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("External ref")}</th>
+                <th>{t("Ordered by")}</th>
+                <th>{t("Ordered at")}</th>
+                <th>{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -521,7 +522,7 @@ function OrdersPanel({ auth, detail, reload, go, encounterId }: { auth: Auth; de
                   <td>{shortId(o.id)}</td>
                   <td>{o.type}</td>
                   <td>
-                    <Badge tone={toneFor(o.status)}>{o.status}</Badge>
+                    <Badge tone={toneFor(o.status)}>{statusLabel(o.status)}</Badge>
                   </td>
                   <td>{o.externalOrderRef}</td>
                   <td>{o.orderedBy}</td>
@@ -602,12 +603,12 @@ function ResultsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
   }
   return (
     <div>
-      <h3>CLS results (SCR-EMR-05)</h3>
+      <h3>{t("CLS results (SCR-EMR-05)")}</h3>
       {detail.orders.length === 0 ? (
-        <EmptyNote text="No orders yet. Create an order on the Orders tab first." />
+        <EmptyNote text={t("No orders yet. Create an order on the Orders tab first.")} />
       ) : (
         <div>
-          <Field label="Order">
+          <Field label={t("Order")}>
             <select value={orderId} onChange={(e) => setOrderId(e.target.value)}>
               {detail.orders.map((o) => (
                 <option key={o.id} value={o.id}>
@@ -618,26 +619,26 @@ function ResultsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
           </Field>
           {selected !== null ? (
             <p>
-              Order status: <Badge tone={toneFor(selected.status)}>{selected.status}</Badge>{" "}
-              {selected.status !== "COMPLETED" ? <Badge tone="warn">PENDING</Badge> : null}
+              {t("Order status:")} <Badge tone={toneFor(selected.status)}>{statusLabel(selected.status)}</Badge>{" "}
+              {selected.status !== "COMPLETED" ? <Badge tone="warn">{t("PENDING")}</Badge> : null}
             </p>
           ) : null}
-          {results.loading ? <p role="status">Loading results...</p> : null}
+          {results.loading ? <p role="status">{t("Loading results...")}</p> : null}
           <ErrorBanner error={results.error} />
-          {results.data !== null && results.data.length === 0 ? <EmptyNote text="No results for this order yet. The result is pending." /> : null}
+          {results.data !== null && results.data.length === 0 ? <EmptyNote text={t("No results for this order yet. The result is pending.")} /> : null}
           {results.data !== null && results.data.length > 0 ? (
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Result</th>
-                    <th>Source</th>
-                    <th>Source result ID</th>
-                    <th>Version</th>
-                    <th>Received at</th>
-                    <th>Abnormal flag</th>
-                    <th>Quality</th>
-                    <th>Payload</th>
+                    <th>{t("Result")}</th>
+                    <th>{t("Source")}</th>
+                    <th>{t("Source result ID")}</th>
+                    <th>{t("Version")}</th>
+                    <th>{t("Received at")}</th>
+                    <th>{t("Abnormal flag")}</th>
+                    <th>{t("Quality")}</th>
+                    <th>{t("Payload")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -648,9 +649,9 @@ function ResultsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
                       <td>{r.sourceResultId}</td>
                       <td>{r.sourceVersion}</td>
                       <td>{fmtDateTime(r.receivedAt)}</td>
-            <td>{r.abnormalFlag === true ? <Badge tone="bad">Abnormal</Badge> : r.abnormalFlag === false ? "No" : "—"}</td>
+            <td>{r.abnormalFlag === true ? <Badge tone="bad">{t("Abnormal")}</Badge> : r.abnormalFlag === false ? "No" : "—"}</td>
                       <td>
-                        <Badge tone={toneFor(r.quality)}>{r.quality}</Badge>
+                        <Badge tone={toneFor(r.quality)}>{statusLabel(r.quality)}</Badge>
                         {r.duplicate ? " (duplicate)" : ""}
                       </td>
                       <td>{r.resultPayload}</td>
@@ -664,31 +665,31 @@ function ResultsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
       )}
       {isCls && orderId !== "" ? (
         <form className="card" onSubmit={submit}>
-          <h4>Receive result (CLS technician)</h4>
-          <p className="muted">The patient ID must match the encounter patient. A result for a different patient is quarantined and does not complete the order.</p>
-          <Field label="Patient ID">
+          <h4>{t("Receive result (CLS technician)")}</h4>
+          <p className="muted">{t("The patient ID must match the encounter patient. A result for a different patient is quarantined and does not complete the order.")}</p>
+          <Field label={t("Patient ID")}>
             <input value={form.patientId} onChange={(e) => set("patientId", e.target.value)} required />
           </Field>
           <div className="row">
-            <Field label="Source system">
+            <Field label={t("Source system")}>
               <input value={form.sourceSystem} onChange={(e) => set("sourceSystem", e.target.value)} required />
             </Field>
-            <Field label="Source result ID">
+            <Field label={t("Source result ID")}>
               <input value={form.sourceResultId} onChange={(e) => set("sourceResultId", e.target.value)} required />
             </Field>
-            <Field label="Source version (optional)">
+            <Field label={t("Source version (optional)")}>
               <input value={form.sourceVersion} onChange={(e) => set("sourceVersion", e.target.value)} required />
             </Field>
           </div>
-          <Field label="Result payload (JSON or text)">
+          <Field label={t("Result payload (JSON or text)")}>
             <textarea value={form.resultPayload} onChange={(e) => set("resultPayload", e.target.value)} required />
           </Field>
-          <Field label="Abnormal flag (true or false, optional)">
+          <Field label={t("Abnormal flag (true or false, optional)")}>
             <input value={form.abnormalFlag} onChange={(e) => set("abnormalFlag", e.target.value)} />
           </Field>
           {notice !== null ? <p className="muted">{notice}</p> : null}
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Receive result" />
+          <SubmitRow busy={busy} label={t("Receive result")} />
         </form>
       ) : null}
     </div>
@@ -756,38 +757,38 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
   }
   return (
     <div>
-      <h3>Prescriptions (SCR-EMR-06)</h3>
-      <p className="muted">Allergy warnings come from the prescription response. A known allergy blocks the prescription; missing or unconfirmed allergy data only produces a warning. Missing allergy data never means the medication is safe.</p>
+      <h3>{t("Prescriptions (SCR-EMR-06)")}</h3>
+      <p className="muted">{t("Allergy warnings come from the prescription response. A known allergy blocks the prescription; missing or unconfirmed allergy data only produces a warning. Missing allergy data never means the medication is safe.")}</p>
       {created !== null ? (
     <div className={created.allergyWarnings.length > 0 ? "allergy-alert" : "card"}>
-          <h4>Prescription created</h4>
+          <h4>{t("Prescription created")}</h4>
           <p>
-            Prescription {shortId(created.id)} — status <Badge tone={toneFor(created.status)}>{created.status}</Badge>
+            {t("Prescription")} {shortId(created.id)} — {t("Status")}: <Badge tone={toneFor(created.status)}>{statusLabel(created.status)}</Badge>
           </p>
           {created.allergyWarnings.length === 0 ? (
-            <p className="muted">No allergy warning was returned for this prescription. This does not mean the medication is safe; allergy data may simply be missing or unconfirmed.</p>
+            <p className="muted">{t("No allergy warning was returned for this prescription. This does not mean the medication is safe; allergy data may simply be missing or unconfirmed.")}</p>
           ) : null}
           {created.allergyWarnings.map((w, i) => (
             <p key={i}>
-              <Badge tone={allergyTone(w)}>{w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING"}</Badge> {w}
+              <Badge tone={allergyTone(w)}>{statusLabel(w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING")}</Badge> {w}
             </p>
           ))}
         </div>
       ) : null}
       <ErrorBanner error={actionError} />
-      {detail.prescriptions.length === 0 ? <EmptyNote text="No prescriptions yet." /> : null}
+      {detail.prescriptions.length === 0 ? <EmptyNote text={t("No prescriptions yet.")} /> : null}
       {detail.prescriptions.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Prescription</th>
-                <th>Prescriber</th>
-                <th>Status</th>
-                <th>Issued at</th>
-                <th>Items</th>
-                <th>Allergy warnings</th>
-                <th>Actions</th>
+                <th>{t("Prescription")}</th>
+                <th>{t("Prescriber")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Issued at")}</th>
+                <th>{t("Items")}</th>
+                <th>{t("Allergy warnings")}</th>
+                <th>{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -795,14 +796,14 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
       <tr key={p.id} className={p.allergyWarnings.length > 0 ? "row-attention" : ""}>
                   <td>{shortId(p.id)}</td>
                   <td>{p.prescriberId}</td>
-                  <td><Badge tone={toneFor(p.status)}>{p.status}</Badge></td>
+                  <td><Badge tone={toneFor(p.status)}>{statusLabel(p.status)}</Badge></td>
                   <td>{fmtDateTime(p.issuedAt)}</td>
                   <td>{p.items.map((it) => it.medicationLabel + " " + (it.dose ?? "") + " " + (it.frequency ?? "")).join("; ")}</td>
                   <td>
-                    {p.allergyWarnings.length === 0 ? "None returned" : null}
+                    {p.allergyWarnings.length === 0 ? t("None returned") : null}
                     {p.allergyWarnings.map((w, i) => (
                       <div key={i}>
-                        <Badge tone={allergyTone(w)}>{w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING"}</Badge> {w}
+                        <Badge tone={allergyTone(w)}>{statusLabel(w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING")}</Badge> {w}
                       </div>
                     ))}
                   </td>
@@ -826,33 +827,33 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
       ) : null}
       {isDoctor ? (
         <form className="card" onSubmit={submit}>
-          <h4>New prescription (doctor)</h4>
-          <p className="muted">The prescriber must have a valid CCHN and the medication must be active. A known allergy blocks the prescription with an error; the prescription is not created.</p>
+          <h4>{t("New prescription (doctor)")}</h4>
+          <p className="muted">{t("The prescriber must have a valid CCHN and the medication must be active. A known allergy blocks the prescription with an error; the prescription is not created.")}</p>
           {items.map((it, index) => (
             <div key={index} className="card card-nested">
               <p>Item {index + 1}</p>
-              <Field label="Medication ID">
+              <Field label={t("Medication ID")}>
                 <input value={it.medicationId} onChange={(e) => setItem(index, "medicationId", e.target.value)} required />
               </Field>
               <div className="row">
-                <Field label="Dose">
+                <Field label={t("Dose")}>
                   <input value={it.dose} onChange={(e) => setItem(index, "dose", e.target.value)} required />
                 </Field>
-                <Field label="Route">
+                <Field label={t("Route")}>
                   <input value={it.route} onChange={(e) => setItem(index, "route", e.target.value)} required />
                 </Field>
-                <Field label="Frequency">
+                <Field label={t("Frequency")}>
                   <input value={it.frequency} onChange={(e) => setItem(index, "frequency", e.target.value)} required />
                 </Field>
               </div>
               <div className="row">
-                <Field label="Days">
+                <Field label={t("Days")}>
                   <input type="number" min="1" value={it.daysCount} onChange={(e) => setItem(index, "daysCount", e.target.value)} required />
                 </Field>
-                <Field label="Quantity">
+                <Field label={t("Quantity")}>
                   <input type="number" min="1" value={it.quantity} onChange={(e) => setItem(index, "quantity", e.target.value)} required />
                 </Field>
-                <Field label="Unit">
+                <Field label={t("Unit")}>
                   <input value={it.unitCode} onChange={(e) => setItem(index, "unitCode", e.target.value)} required />
                 </Field>
               </div>
@@ -869,10 +870,10 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
             </button>
           </div>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Create prescription" />
+          <SubmitRow busy={busy} label={t("Create prescription")} />
         </form>
       ) : (
-        <p className="muted">Prescriptions can only be created by a doctor. You are signed in as {auth.role}.</p>
+        <p className="muted">{t("Prescriptions can only be created by a doctor. You are signed in as")} {statusLabel(auth.role)}.</p>
       )}
     </div>
   );
@@ -908,20 +909,20 @@ function RecordPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
   const canArchive = auth.role === "RECORDS_MANAGER";
   return (
     <div>
-      <h3>Medical record (SCR-EMR-07, SCR-EMR-08)</h3>
+      <h3>{t("Medical record (SCR-EMR-07, SCR-EMR-08)")}</h3>
       {rec === null ? (
-        <EmptyNote text="No medical record exists for this encounter yet. The record is created when the encounter completes." />
+        <EmptyNote text={t("No medical record exists for this encounter yet. The record is created when the encounter completes.")} />
       ) : (
         <div>
           <dl className="kv">
-            <div><dt>Record</dt><dd>{shortId(rec.id)}</dd></div>
-            <div><dt>Status</dt><dd><Badge tone={toneFor(rec.status)}>{rec.status}</Badge></dd></div>
-            <div><dt>Current version</dt><dd>{rec.currentVersion}</dd></div>
-            <div><dt>Row version</dt><dd>{rec.rowVersion}</dd></div>
-            <div><dt>Locked by</dt><dd>{rec.lockedBy}</dd></div>
-            <div><dt>Locked at</dt><dd>{fmtDateTime(rec.lockedAt)}</dd></div>
+            <div><dt>{t("Record")}</dt><dd>{shortId(rec.id)}</dd></div>
+            <div><dt>{t("Status")}</dt><dd><Badge tone={toneFor(rec.status)}>{statusLabel(rec.status)}</Badge></dd></div>
+            <div><dt>{t("Current version")}</dt><dd>{rec.currentVersion}</dd></div>
+            <div><dt>{t("Row version")}</dt><dd>{rec.rowVersion}</dd></div>
+            <div><dt>{t("Locked by")}</dt><dd>{rec.lockedBy}</dd></div>
+            <div><dt>{t("Locked at")}</dt><dd>{fmtDateTime(rec.lockedAt)}</dd></div>
           </dl>
-          <p className="muted">Record lifecycle: DRAFT → PENDING_SIGNATURE → LOCKED → ARCHIVED. Submitting uses the current row version; if the record changed, the request is refused with a conflict (409) and nothing is overwritten.</p>
+          <p className="muted">{t("Record lifecycle: DRAFT → PENDING_SIGNATURE → LOCKED → ARCHIVED. Submitting uses the current row version; if the record changed, the request is refused with a conflict (409) and nothing is overwritten.")}</p>
           {canSign ? (
             <div className="row">
               <button className="btn" type="button" disabled={busy || rec.status !== "DRAFT"} onClick={() => act("submit")}>
@@ -940,20 +941,20 @@ function RecordPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
             </div>
           ) : null}
           <ErrorBanner error={error} />
-          <p className="card">Demo confirmation (SCR-EMR-08): Locking a record here is a demo confirmation only. It is NOT a digital signature and NOT a legally binding signature. No cryptographic signature is created or verified.</p>
-          <h4>Version history</h4>
-          {versions.loading ? <p role="status">Loading versions...</p> : null}
+          <p className="card">{t("Demo confirmation (SCR-EMR-08): Locking a record here is a demo confirmation only. It is NOT a digital signature and NOT a legally binding signature. No cryptographic signature is created or verified.")}</p>
+          <h4>{t("Version history")}</h4>
+          {versions.loading ? <p role="status">{t("Loading versions...")}</p> : null}
           <ErrorBanner error={versions.error} />
-          {versions.data !== null && versions.data.length === 0 ? <EmptyNote text="No versions recorded yet." /> : null}
+          {versions.data !== null && versions.data.length === 0 ? <EmptyNote text={t("No versions recorded yet.")} /> : null}
           {versions.data !== null && versions.data.length > 0 ? (
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Version</th>
-                    <th>SHA-256</th>
-                    <th>Created at</th>
-                    <th>Created by</th>
+                    <th>{t("Version")}</th>
+                    <th>{t("SHA-256")}</th>
+                    <th>{t("Created at")}</th>
+                    <th>{t("Created by")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1012,47 +1013,47 @@ function AddendaPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
   }
   return (
     <div>
-      <h3>Addenda (SCR-EMR-09)</h3>
+      <h3>{t("Addenda (SCR-EMR-09)")}</h3>
       {rec === null ? (
-        <EmptyNote text="No medical record exists for this encounter yet. Addenda can only be added to a LOCKED record." />
+        <EmptyNote text={t("No medical record exists for this encounter yet. Addenda can only be added to a LOCKED record.")} />
       ) : (
         <div>
           <p className="muted">
-            Record status: <Badge tone={toneFor(rec.status)}>{rec.status}</Badge> Addenda can only be added to a LOCKED record. The original record is kept unchanged; an addendum is a separate, confirmed annotation.
+            {t("Record status:")} <Badge tone={toneFor(rec.status)}>{statusLabel(rec.status)}</Badge> {t("Addenda can only be added to a LOCKED record. The original record is kept unchanged; an addendum is a separate, confirmed annotation.")}
           </p>
           {canAdd && rec.status === "LOCKED" ? (
             <form className="card" onSubmit={submit}>
-              <h4>New addendum</h4>
-              <Field label="Reason">
+              <h4>{t("New addendum")}</h4>
+              <Field label={t("Reason")}>
                 <input value={form.reason} onChange={(e) => set("reason", e.target.value)} required />
               </Field>
-              <Field label="Content">
+              <Field label={t("Content")}>
                 <textarea value={form.content} onChange={(e) => set("content", e.target.value)} required />
               </Field>
               <ErrorBanner error={error} />
-              <SubmitRow busy={busy} label="Add addendum" />
+              <SubmitRow busy={busy} label={t("Add addendum")} />
             </form>
           ) : null}
           {canAdd && rec.status !== "LOCKED" ? (
-            <p className="muted">The record is {rec.status}, not LOCKED, so no addendum can be added yet.</p>
+            <p className="muted">{tf("The record is {status}, not LOCKED, so no addendum can be added yet.", { status: statusLabel(rec.status) })}</p>
           ) : null}
           <ErrorBanner error={actionError} />
-          {addenda.loading ? <p role="status">Loading addenda...</p> : null}
+          {addenda.loading ? <p role="status">{t("Loading addenda...")}</p> : null}
           <ErrorBanner error={addenda.error} />
-          {addenda.data !== null && addenda.data.length === 0 ? <EmptyNote text="No addenda yet." /> : null}
+          {addenda.data !== null && addenda.data.length === 0 ? <EmptyNote text={t("No addenda yet.")} /> : null}
           {addenda.data !== null && addenda.data.length > 0 ? (
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Addendum</th>
-                    <th>Reason</th>
-                    <th>Content</th>
-                    <th>Status</th>
-                    <th>Created at</th>
-                    <th>Created by</th>
-                    <th>Confirmed at</th>
-                    <th>Confirmed by</th>
+                    <th>{t("Addendum")}</th>
+                    <th>{t("Reason")}</th>
+                    <th>{t("Content")}</th>
+                    <th>{t("Status")}</th>
+                    <th>{t("Created at")}</th>
+                    <th>{t("Created by")}</th>
+                    <th>{t("Confirmed at")}</th>
+                    <th>{t("Confirmed by")}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1062,7 +1063,7 @@ function AddendaPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
                       <td>{shortId(a.id)}</td>
                       <td>{a.reason}</td>
                       <td>{a.content}</td>
-                      <td><Badge tone={toneFor(a.confirmationStatus)}>{a.confirmationStatus}</Badge></td>
+                      <td><Badge tone={toneFor(a.confirmationStatus)}>{statusLabel(a.confirmationStatus)}</Badge></td>
                       <td>{fmtDateTime(a.createdAt)}</td>
                       <td>{a.createdBy}</td>
                       <td>{fmtDateTime(a.confirmedAt)}</td>

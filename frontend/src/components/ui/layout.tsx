@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { LanguageSwitcher, currentLocale, greetingFor, shiftFor, statusLabel, t, tf } from "../../lib/i18n";
 import type { ReactNode } from "react";
 import type { Auth, Department, Employee, Encounter } from "../../lib/api";
 import { listDepartments, listEncounters, searchEmployees } from "../../lib/api";
@@ -31,21 +32,6 @@ export interface AppShellProps {
   onSignOut: () => void;
   fab: { label: string; onClick: () => void } | null;
   children: ReactNode;
-}
-
-export function greetingFor(date: Date): string {
-  const h = date.getHours();
-  if (h < 5) return "Good night";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-export function shiftFor(date: Date): string {
-  const h = date.getHours();
-  if (h >= 7 && h < 15) return "Day shift";
-  if (h >= 15 && h < 23) return "Evening shift";
-  return "Night shift";
 }
 
 export function initialsFor(label: string): string {
@@ -88,7 +74,7 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
           const employees = toArray<Employee>(await searchEmployees(auth, ""));
           for (const e of employees) {
             if (matches(e.fullName, q) || matches(e.employeeCode, q)) {
-              found.push({ kind: "Employee", id: e.id, title: e.fullName, detail: e.employeeCode + " - " + e.status });
+              found.push({ kind: "Employee", id: e.id, title: e.fullName, detail: e.employeeCode + " - " + statusLabel(e.status) });
             }
           }
           const departments = toArray<Department>(await listDepartments(auth));
@@ -112,7 +98,7 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
           setError("");
         }
       } catch (err) {
-        if (cancelled === false) setError(err instanceof Error ? err.message : "Search failed");
+        if (cancelled === false) setError(err instanceof Error ? err.message : t("Search failed"));
       } finally {
         if (cancelled === false) setLoading(false);
       }
@@ -126,17 +112,17 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
 
   return (
     <div className="palette-overlay" role="presentation" onClick={onClose}>
-      <div className="palette" role="dialog" aria-modal="true" aria-label="Global search" onClick={(e) => e.stopPropagation()}>
-        <input ref={inputRef} className="palette-input" type="search" placeholder="Search patients, employees, departments" aria-label="Search patients, employees, departments" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
-        {loading && <p className="palette-hint">Searching real records</p>}
+      <div className="palette" role="dialog" aria-modal="true" aria-label={t("Global search")} onClick={(e) => e.stopPropagation()}>
+        <input ref={inputRef} className="palette-input" type="search" placeholder={t("Search patients, employees, departments")} aria-label={t("Search patients, employees, departments")} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
+        {loading && <p className="palette-hint">{t("Searching real records")}</p>}
         {error !== "" && <p className="palette-hint" role="alert">{error}</p>}
-        {query.trim().length >= 2 && loading === false && hits.length === 0 && error === "" && (<p className="palette-hint">No matches in the records you can access.</p>)}
-        {query.trim().length < 2 && (<p className="palette-hint">Type at least 2 characters. Encounters are matched by patient and encounter ID; employees by name or code; departments by name or code.</p>)}
+        {query.trim().length >= 2 && loading === false && hits.length === 0 && error === "" && (<p className="palette-hint">{t("No matches in the records you can access.")}</p>)}
+        {query.trim().length < 2 && (<p className="palette-hint">{t("Type at least 2 characters. Encounters are matched by patient and encounter ID; employees by name or code; departments by name or code.")}</p>)}
         <ul className="palette-list">
           {hits.map((hit, index) => (
             <li key={hit.kind + "-" + hit.id}>
               <button type="button" className={"palette-item" + (index === selected ? " selected" : "")} onClick={() => openHit(hit)} onMouseEnter={() => setSelected(index)}>
-                <span className="palette-kind">{hit.kind}</span>
+                <span className="palette-kind">{hit.kind === "Encounter" ? t("Encounter") : hit.kind === "Employee" ? t("Employee") : t("Department")}</span>
                 <span><strong>{hit.title}</strong><br /><span className="muted">{hit.detail}</span></span>
               </button>
             </li>
@@ -170,22 +156,22 @@ export function AppShell({ auth, nav, bottomNav, pendingDecisions, onOpenPending
 
   const groups: string[] = [];
   for (const entry of nav) { if (groups.includes(entry.group) === false) groups.push(entry.group); }
-  const clock = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateLine = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  const clock = now.toLocaleTimeString(currentLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dateLine = now.toLocaleDateString(currentLocale(), { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="app-shell">
-      <aside className={"sidebar" + (sidebarOpen ? " open" : "")} aria-label="Primary">
+      <aside className={"sidebar" + (sidebarOpen ? " open" : "")} aria-label={t("Primary navigation")}>
         <div className="sidebar-brand">
           <span className="sidebar-brand-mark" aria-hidden="true">+</span>
-          <span><span className="sidebar-brand-name">SmartHMS</span><br /><span className="sidebar-brand-sub">Hospital Management</span></span>
+          <span><span className="sidebar-brand-name">{t("SmartHMS")}</span><br /><span className="sidebar-brand-sub">{t("Hospital Management")}</span></span>
         </div>
         <div className="sidebar-status">
           <span className="status-dot" aria-hidden="true"></span>
-          <span>On duty - {shiftFor(now)}</span>
+          <span>{t("On duty")} - {shiftFor(now)}</span>
           <span className="sidebar-clock">{clock}</span>
         </div>
-        <nav className="sidebar-nav" aria-label="Sections">
+        <nav className="sidebar-nav" aria-label={t("Sections")}>
           {groups.map((group) => (
             <div className="nav-group" key={group}>
               <div className="nav-group-label">{group}</div>
@@ -202,34 +188,35 @@ export function AppShell({ auth, nav, bottomNav, pendingDecisions, onOpenPending
         <div className="sidebar-user">
           <div className="sidebar-user-row1">
             <span className="avatar" aria-hidden="true">{initialsFor(auth.label)}</span>
-            <span className="sidebar-user-name">{auth.label}</span>
+            <span className="sidebar-user-name">{statusLabel(auth.role)}</span>
           </div>
           <div className="sidebar-user-row2">
-            <span>{auth.role}</span>
+            <span>{auth.username}</span>
             <span className="status-dot" aria-hidden="true"></span>
-            <span>On duty</span>
-        <button type="button" className="sidebar-user-signout" onClick={onSignOut}>Sign out</button>
+            <span>{t("On duty")}</span>
+        <button type="button" className="sidebar-user-signout" onClick={onSignOut}>{t("Sign out")}</button>
           </div>
         </div>
       </aside>
       <div className="app-main">
         <header className="topbar">
-          <button type="button" className="icon-btn menu-btn" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}>&#9776;</button>
+          <button type="button" className="icon-btn menu-btn" aria-label={t("Open navigation")} onClick={() => setSidebarOpen(true)}>&#9776;</button>
       <div className="topbar-text">
-            <p className="topbar-greeting">{greetingFor(now)}, {auth.label}</p>
+            <p className="topbar-greeting">{greetingFor(now)}, {statusLabel(auth.role)}</p>
             <p className="topbar-sub">{dateLine} - {shiftFor(now)}</p>
           </div>
           <div className="topbar-spacer"></div>
-          <button type="button" className="search-trigger" onClick={() => setPaletteOpen(true)} aria-label="Search records"><span aria-hidden="true">&#128269;</span><span className="search-label">Search records</span><kbd>Ctrl K</kbd></button>
+    <LanguageSwitcher />
+          <button type="button" className="search-trigger" onClick={() => setPaletteOpen(true)} aria-label={t("Search records")}><span aria-hidden="true">&#128269;</span><span className="search-label">{t("Search records")}</span><kbd>{t("Ctrl K")}</kbd></button>
           {isHr(auth.role) && (
-            <button type="button" className="icon-btn" aria-label={pendingDecisions > 0 ? "Notifications, " + pendingDecisions + " pending decisions" : "Notifications"} onClick={onOpenPendingDecisions}>
+            <button type="button" className="icon-btn" aria-label={pendingDecisions > 0 ? tf("Notifications, {n} pending decisions", { n: pendingDecisions }) : t("Notifications")} onClick={onOpenPendingDecisions}>
               <span aria-hidden="true">&#128276;</span>
               {pendingDecisions > 0 && (<span className="icon-btn-badge">{pendingDecisions}</span>)}
             </button>
           )}
         </header>
         <div className="content">{children}</div>
-        <nav className="bottom-nav" aria-label="Primary mobile">
+        <nav className="bottom-nav" aria-label={t("Mobile navigation")}>
           {bottomNav.map((entry) => (
             <button key={entry.id} type="button" className={"bottom-nav-item" + (entry.active ? " active" : "")} aria-current={entry.active ? "page" : undefined} onClick={entry.onSelect}>
               <span className="bottom-nav-icon" aria-hidden="true">{entry.icon}</span>

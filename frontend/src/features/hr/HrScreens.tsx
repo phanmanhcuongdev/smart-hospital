@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { statusLabel, t } from "../../lib/i18n";
 import type { Auth } from "../../lib/api";
 import { addCertification, applyDueDecisions, createDecision, createDepartment, createEmployee, createRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, updateDepartment, updateEmployee, type Certification, type Decision, type Department, type Employee } from "../../lib/api";
 import { Badge, EmptyNote, ErrorBanner, Field, ResultCount, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
@@ -48,8 +49,8 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
   }
   return (
     <section>
-      <h2>Employees</h2>
-      <p className="muted">Search and filter employees by department, status and job title. Creating an employee grants no system role.</p>
+      <h2>{t("Employees")}</h2>
+      <p className="muted">{t("Search and filter employees by department, status and job title. Creating an employee grants no system role.")}</p>
       {canHr ? (
         <button className="btn" type="button" onClick={() => setShowForm(true)}>
           New employee
@@ -67,11 +68,11 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
         />
       ) : null}
       <form className="card" onSubmit={applyFilters}>
-        <h3>Search</h3>
+        <h3>{t("Search")}</h3>
         <div className="row">
-          <Field label="Department">
+          <Field label={t("Department")}>
             <select value={filters.departmentId} onChange={(e) => setFilters((f) => ({ ...f, departmentId: e.target.value }))}>
-              <option value="">All departments</option>
+              <option value="">{t("All departments")}</option>
               {(departments.data ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.displayName} ({d.departmentCode})
@@ -79,36 +80,36 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
               ))}
             </select>
           </Field>
-          <Field label="Status">
+          <Field label={t("Status")}>
             <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}>
-              <option value="">All statuses</option>
-              <option value="ONBOARDING">ONBOARDING</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="SUSPENDED">SUSPENDED</option>
-              <option value="TERMINATED">TERMINATED</option>
+              <option value="">{t("All statuses")}</option>
+              <option value="ONBOARDING">{t("ONBOARDING")}</option>
+              <option value="ACTIVE">{t("ACTIVE")}</option>
+              <option value="SUSPENDED">{t("SUSPENDED")}</option>
+              <option value="TERMINATED">{t("TERMINATED")}</option>
             </select>
           </Field>
-          <Field label="Job title">
+          <Field label={t("Job title")}>
             <input value={filters.jobTitle} onChange={(e) => setFilters((f) => ({ ...f, jobTitle: e.target.value }))} />
           </Field>
         </div>
-        <SubmitRow busy={false} label="Search" />
+        <SubmitRow busy={false} label={t("Search")} />
       </form>
-      {employees.loading ? <p role="status">Loading employees...</p> : null}
+      {employees.loading ? <p role="status">{t("Loading employees...")}</p> : null}
       <ErrorBanner error={employees.error} />
-      {employees.data !== null ? <ResultCount shown={employees.data.length} total={employees.data.length} noun="employees" /> : null}
-      {employees.data !== null && employees.data.length === 0 ? <EmptyNote text="No employees match the search." /> : null}
+      {employees.data !== null ? <ResultCount shown={employees.data.length} total={employees.data.length} noun={t("employees")} /> : null}
+      {employees.data !== null && employees.data.length === 0 ? <EmptyNote text={t("No employees match the search.")} /> : null}
       {employees.data !== null && employees.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Full name</th>
-                <th>Birth date</th>
-                <th>Status</th>
-                <th>Status effective</th>
-                <th>Created by</th>
+                <th>{t("Code")}</th>
+                <th>{t("Full name")}</th>
+                <th>{t("Birth date")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Status effective")}</th>
+                <th>{t("Created by")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -118,7 +119,7 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
                   <td>{e.employeeCode}</td>
                   <td>{e.fullName}</td>
                   <td>{fmtDate(e.birthDate)}</td>
-                  <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
+                  <td><Badge tone={toneFor(e.status)}>{statusLabel(e.status)}</Badge></td>
                   <td>{fmtDateTime(e.statusEffectiveAt)}</td>
                   <td>{e.createdBy}</td>
                   <td>
@@ -198,39 +199,39 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
     <form className="card" onSubmit={submit}>
       <h3>{isCreate ? "New employee" : "Edit employee " + (initial?.employeeCode ?? "")}</h3>
       {isCreate ? (
-        <p className="muted">The employee code is required and must be unique. Department and job title are set here; later changes to the department go through a transfer.</p>
+        <p className="muted">{t("The employee code is required and must be unique. Department and job title are set here; later changes to the department go through a transfer.")}</p>
       ) : (
-        <p className="muted">Department and job title are not changed here; use a transfer for those.</p>
+        <p className="muted">{t("Department and job title are not changed here; use a transfer for those.")}</p>
       )}
       <div className="row">
-        <Field label="Employee code">
+        <Field label={t("Employee code")}>
           <input value={form.employeeCode} onChange={(e) => set("employeeCode", e.target.value)} required disabled={!isCreate} />
         </Field>
-        <Field label="Full name">
+        <Field label={t("Full name")}>
           <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required />
         </Field>
       </div>
       <div className="row">
-        <Field label="Birth date">
+        <Field label={t("Birth date")}>
           <input type="date" value={form.birthDate} onChange={(e) => set("birthDate", e.target.value)} />
         </Field>
-        <Field label="Hire date">
+        <Field label={t("Hire date")}>
           <input type="date" value={form.hireDate} onChange={(e) => set("hireDate", e.target.value)} />
         </Field>
-        <Field label="Gender">
+        <Field label={t("Gender")}>
           <select value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-            <option value="">Not specified</option>
-            <option value="FEMALE">FEMALE</option>
-            <option value="MALE">MALE</option>
-            <option value="OTHER">OTHER</option>
+            <option value="">{t("Not specified")}</option>
+            <option value="FEMALE">{t("FEMALE")}</option>
+            <option value="MALE">{t("MALE")}</option>
+            <option value="OTHER">{t("OTHER")}</option>
           </select>
         </Field>
       </div>
       {isCreate ? (
         <div className="row">
-          <Field label="Department">
+          <Field label={t("Department")}>
             <select value={form.departmentId} onChange={(e) => set("departmentId", e.target.value)} required>
-              <option value="">Select a department</option>
+              <option value="">{t("Select a department")}</option>
               {(departments.data ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.displayName} ({d.departmentCode})
@@ -238,12 +239,12 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
               ))}
             </select>
           </Field>
-          <Field label="Job title">
+          <Field label={t("Job title")}>
             <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} required />
           </Field>
-          <Field label="Role profile (optional)">
+          <Field label={t("Role profile (optional)")}>
             <select value={form.roleProfileId} onChange={(e) => set("roleProfileId", e.target.value)}>
-              <option value="">None</option>
+              <option value="">{t("None")}</option>
               {(roles.data ?? []).map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.titleName}
@@ -254,14 +255,14 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
         </div>
       ) : null}
       <div className="row">
-        <Field label="Phone">
+        <Field label={t("Phone")}>
           <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         </Field>
-        <Field label="Email">
+        <Field label={t("Email")}>
           <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
         </Field>
       </div>
-      <Field label="Address">
+      <Field label={t("Address")}>
         <input value={form.address} onChange={(e) => set("address", e.target.value)} />
       </Field>
       <ErrorBanner error={error} />
@@ -286,14 +287,14 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
   const [showEdit, setShowEdit] = useState(false);
   const canHr = auth.role === "HR_SPECIALIST";
   if (employee.loading && employee.data === null) {
-    return <p role="status">Loading employee...</p>;
+    return <p role="status">{t("Loading employee...")}</p>;
   }
   if (employee.error !== null && employee.data === null) {
     return <ErrorBanner error={employee.error} />;
   }
   const emp = employee.data;
   if (emp === null) {
-    return <EmptyNote text="Employee not found." />;
+    return <EmptyNote text={t("Employee not found.")} />;
   }
   return (
     <section>
@@ -304,17 +305,17 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
         {emp.fullName} ({emp.employeeCode})
       </h2>
       <dl className="kv">
-        <div><dt>Employee code</dt><dd>{emp.employeeCode}</dd></div>
-        <div><dt>Full name</dt><dd>{emp.fullName}</dd></div>
-        <div><dt>Birth date</dt><dd>{fmtDate(emp.birthDate)}</dd></div>
-        <div><dt>Status</dt><dd><Badge tone={toneFor(emp.status)}>{emp.status}</Badge></dd></div>
-        <div><dt>Status effective</dt><dd>{fmtDateTime(emp.statusEffectiveAt)}</dd></div>
-        <div><dt>Gender</dt><dd>{emp.gender}</dd></div>
-        <div><dt>Phone</dt><dd>{emp.phone}</dd></div>
-        <div><dt>Email</dt><dd>{emp.email}</dd></div>
-        <div><dt>Address</dt><dd>{emp.address}</dd></div>
-        <div><dt>Hire date</dt><dd>{fmtDate(emp.hireDate)}</dd></div>
-        <div><dt>Created by</dt><dd>{emp.createdBy}</dd></div>
+        <div><dt>{t("Employee code")}</dt><dd>{emp.employeeCode}</dd></div>
+        <div><dt>{t("Full name")}</dt><dd>{emp.fullName}</dd></div>
+        <div><dt>{t("Birth date")}</dt><dd>{fmtDate(emp.birthDate)}</dd></div>
+        <div><dt>{t("Status")}</dt><dd><Badge tone={toneFor(emp.status)}>{statusLabel(emp.status)}</Badge></dd></div>
+        <div><dt>{t("Status effective")}</dt><dd>{fmtDateTime(emp.statusEffectiveAt)}</dd></div>
+        <div><dt>{t("Gender")}</dt><dd>{emp.gender}</dd></div>
+        <div><dt>{t("Phone")}</dt><dd>{emp.phone}</dd></div>
+        <div><dt>{t("Email")}</dt><dd>{emp.email}</dd></div>
+        <div><dt>{t("Address")}</dt><dd>{emp.address}</dd></div>
+        <div><dt>{t("Hire date")}</dt><dd>{fmtDate(emp.hireDate)}</dd></div>
+        <div><dt>{t("Created by")}</dt><dd>{emp.createdBy}</dd></div>
       </dl>
       {canHr && !showEdit ? (
         <button className="btn" type="button" onClick={() => setShowEdit(true)}>
@@ -332,7 +333,7 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
           onCancel={() => setShowEdit(false)}
         />
       ) : null}
-      <nav className="tabs" aria-label="Employee sections">
+      <nav className="tabs" aria-label={t("Employee sections")}>
         {(["overview", "certs", "decisions", "transfers", "history"] as HrTab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? "tab active" : "tab"} onClick={() => go({ name: "hr-employee", employeeId, tab: t })}>
             {hrTabLabel(t)}
@@ -396,23 +397,23 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
   }
   return (
     <div>
-      <h3>Practice certificates (CCHN)</h3>
-      <p className="muted">Validity is computed by the backend: VALID, EXPIRING_SOON (1 to 30 days left), EXPIRED (the day after the expiry date), UNVERIFIED (never eligible) or REJECTED. An expired CCHN does not lock the employee account.</p>
-      {list.loading ? <p role="status">Loading certifications...</p> : null}
+      <h3>{t("Practice certificates (CCHN)")}</h3>
+      <p className="muted">{t("Validity is computed by the backend: VALID, EXPIRING_SOON (1 to 30 days left), EXPIRED (the day after the expiry date), UNVERIFIED (never eligible) or REJECTED. An expired CCHN does not lock the employee account.")}</p>
+      {list.loading ? <p role="status">{t("Loading certifications...")}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text="No certifications yet." /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No certifications yet.")} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Type</th>
-                <th>Number</th>
-                <th>Issuer</th>
-                <th>Valid from</th>
-                <th>Valid until</th>
-                <th>Verification</th>
-                <th>Validity</th>
+                <th>{t("Type")}</th>
+                <th>{t("Number")}</th>
+                <th>{t("Issuer")}</th>
+                <th>{t("Valid from")}</th>
+                <th>{t("Valid until")}</th>
+                <th>{t("Verification")}</th>
+                <th>{t("Validity")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -425,7 +426,7 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
                   <td>{fmtDate(c.validFrom)}</td>
                   <td>{fmtDate(c.validUntil)}</td>
                   <td>{c.verificationStatus}</td>
-                  <td><Badge tone={toneFor(c.validity)}>{c.validity}</Badge></td>
+                  <td><Badge tone={toneFor(c.validity)}>{statusLabel(c.validity)}</Badge></td>
                   <td>
                     {canHr ? (
                       <button className="btn btn-small" type="button" onClick={() => startEdit(c)}>
@@ -443,38 +444,38 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
         <form className="card" onSubmit={submit}>
           <h4>{editing === null ? "New certification" : "Edit certification"}</h4>
           <div className="row">
-            <Field label="Credential type">
+            <Field label={t("Credential type")}>
               <select value={form.credentialType} onChange={(e) => set("credentialType", e.target.value)} required>
-                <option value="CCHN">CCHN</option>
-                <option value="OTHER">OTHER</option>
+                <option value="CCHN">{t("CCHN")}</option>
+                <option value="OTHER">{t("OTHER")}</option>
               </select>
             </Field>
-            <Field label="Credential number">
+            <Field label={t("Credential number")}>
               <input value={form.credentialNo} onChange={(e) => set("credentialNo", e.target.value)} />
             </Field>
-            <Field label="Issuer">
+            <Field label={t("Issuer")}>
               <input value={form.issuer} onChange={(e) => set("issuer", e.target.value)} />
             </Field>
           </div>
-          <Field label="Scope note">
+          <Field label={t("Scope note")}>
             <input value={form.scopeNote} onChange={(e) => set("scopeNote", e.target.value)} />
           </Field>
           <div className="row">
-            <Field label="Valid from">
+            <Field label={t("Valid from")}>
               <input type="date" value={form.validFrom} onChange={(e) => set("validFrom", e.target.value)} />
             </Field>
-            <Field label="Valid until">
+            <Field label={t("Valid until")}>
               <input type="date" value={form.validUntil} onChange={(e) => set("validUntil", e.target.value)} />
             </Field>
-            <Field label="Verification status">
+            <Field label={t("Verification status")}>
               <select value={form.verificationStatus} onChange={(e) => set("verificationStatus", e.target.value)}>
-                <option value="UNVERIFIED">UNVERIFIED</option>
-                <option value="VERIFIED">VERIFIED</option>
-                <option value="REJECTED">REJECTED</option>
+                <option value="UNVERIFIED">{t("UNVERIFIED")}</option>
+                <option value="VERIFIED">{t("VERIFIED")}</option>
+                <option value="REJECTED">{t("REJECTED")}</option>
               </select>
             </Field>
           </div>
-          <Field label="Source reference">
+          <Field label={t("Source reference")}>
             <input value={form.sourceRef} onChange={(e) => set("sourceRef", e.target.value)} required />
           </Field>
           <ErrorBanner error={error} />
@@ -535,8 +536,8 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   }
   return (
     <div>
-      <h3>Status decisions</h3>
-      <p className="muted">Status lifecycle: ONBOARDING to ACTIVE, ACTIVE and SUSPENDED, TERMINATED is terminal. A decision takes effect only at its effective time; future decisions are not applied early. The approver must differ from the person who created the decision (four-eyes).</p>
+      <h3>{t("Status decisions")}</h3>
+      <p className="muted">{t("Status lifecycle: ONBOARDING to ACTIVE, ACTIVE and SUSPENDED, TERMINATED is terminal. A decision takes effect only at its effective time; future decisions are not applied early. The approver must differ from the person who created the decision (four-eyes).")}</p>
       <div className="row">
         <button className="btn" type="button" onClick={applyDue}>
           Apply due decisions
@@ -544,32 +545,32 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       </div>
       {notice !== null ? <p className="muted">{notice}</p> : null}
       <ErrorBanner error={actionError} />
-      {list.loading ? <p role="status">Loading decisions...</p> : null}
+      {list.loading ? <p role="status">{t("Loading decisions...")}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text="No decisions yet." /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No decisions yet.")} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Execution</th>
-                <th>Effective at</th>
-                <th>Approved by</th>
-                <th>Reason</th>
-                <th>Created by</th>
-                <th>Actions</th>
+                <th>{t("Reference")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Status")}</th>
+                <th>{t("Execution")}</th>
+                <th>{t("Effective at")}</th>
+                <th>{t("Approved by")}</th>
+                <th>{t("Reason")}</th>
+                <th>{t("Created by")}</th>
+                <th>{t("Actions")}</th>
               </tr>
             </thead>
             <tbody>
               {list.data.map((d) => (
             <tr key={d.id} className={d.decisionStatus === "PENDING" ? "row-attention" : ""}>
                   <td>{d.decisionRef}</td>
-                  <td>{d.decisionType}</td>
-                  <td><Badge tone={toneFor(d.decisionStatus)}>{d.decisionStatus}</Badge></td>
-                  <td><Badge tone={toneFor(d.executionStatus)}>{d.executionStatus}</Badge></td>
+                  <td>{statusLabel(d.decisionType)}</td>
+                  <td><Badge tone={toneFor(d.decisionStatus)}>{statusLabel(d.decisionStatus)}</Badge></td>
+                  <td><Badge tone={toneFor(d.executionStatus)}>{statusLabel(d.executionStatus)}</Badge></td>
                   <td>{fmtDateTime(d.effectiveAt)}</td>
                   <td>{d.approvedBy}</td>
                   <td>{d.reason}</td>
@@ -585,7 +586,7 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
                         Revoke
                       </button>
                     ) : null}
-                    {canApprove && d.createdBy === auth.username ? <span className="muted">Four-eyes: you created this decision.</span> : null}
+                    {canApprove && d.createdBy === auth.username ? <span className="muted">{t("Four-eyes: you created this decision.")}</span> : null}
                   </td>
                 </tr>
               ))}
@@ -595,28 +596,28 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h4>New status decision (HR specialist)</h4>
+          <h4>{t("New status decision (HR specialist)")}</h4>
           <div className="row">
-            <Field label="Decision reference">
+            <Field label={t("Decision reference")}>
               <input value={form.decisionRef} onChange={(e) => set("decisionRef", e.target.value)} required />
             </Field>
-            <Field label="Decision type">
+            <Field label={t("Decision type")}>
               <select value={form.decisionType} onChange={(e) => set("decisionType", e.target.value)}>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="SUSPENDED">SUSPENDED</option>
-                <option value="TERMINATED">TERMINATED</option>
-                <option value="ONBOARDING">ONBOARDING</option>
+                <option value="ACTIVE">{t("ACTIVE")}</option>
+                <option value="SUSPENDED">{t("SUSPENDED")}</option>
+                <option value="TERMINATED">{t("TERMINATED")}</option>
+                <option value="ONBOARDING">{t("ONBOARDING")}</option>
               </select>
             </Field>
-            <Field label="Effective at (UTC)">
+            <Field label={t("Effective at (UTC)")}>
               <input type="datetime-local" value={form.effectiveAt} onChange={(e) => set("effectiveAt", e.target.value)} required />
             </Field>
           </div>
-          <Field label="Reason">
+          <Field label={t("Reason")}>
             <textarea value={form.reason} onChange={(e) => set("reason", e.target.value)} />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Create decision" />
+          <SubmitRow busy={busy} label={t("Create decision")} />
         </form>
       ) : null}
     </div>
@@ -653,23 +654,23 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   }
   return (
     <div>
-      <h3>Transfers and assignments</h3>
-      <p className="muted">A transfer closes the current assignment and opens a new one. Overlapping assignments are rejected. Assignment history is never overwritten.</p>
-      {assignments.loading ? <p role="status">Loading assignments...</p> : null}
+      <h3>{t("Transfers and assignments")}</h3>
+      <p className="muted">{t("A transfer closes the current assignment and opens a new one. Overlapping assignments are rejected. Assignment history is never overwritten.")}</p>
+      {assignments.loading ? <p role="status">{t("Loading assignments...")}</p> : null}
       <ErrorBanner error={assignments.error} />
-      {assignments.data !== null && assignments.data.length === 0 ? <EmptyNote text="No assignments yet." /> : null}
+      {assignments.data !== null && assignments.data.length === 0 ? <EmptyNote text={t("No assignments yet.")} /> : null}
       {assignments.data !== null && assignments.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Assignment</th>
-                <th>Department</th>
-                <th>Job title</th>
-                <th>Role profile</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
+                <th>{t("Assignment")}</th>
+                <th>{t("Department")}</th>
+                <th>{t("Job title")}</th>
+                <th>{t("Role profile")}</th>
+                <th>{t("Start")}</th>
+                <th>{t("End")}</th>
+                <th>{t("Status")}</th>
               </tr>
             </thead>
             <tbody>
@@ -681,7 +682,7 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
                   <td>{a.roleProfileId}</td>
                   <td>{fmtDateTime(a.startAt)}</td>
                   <td>{fmtDateTime(a.endAt)}</td>
-                  <td><Badge tone={toneFor(a.status)}>{a.status}</Badge></td>
+                  <td><Badge tone={toneFor(a.status)}>{statusLabel(a.status)}</Badge></td>
                 </tr>
               ))}
             </tbody>
@@ -690,11 +691,11 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h4>New transfer (HR specialist)</h4>
+          <h4>{t("New transfer (HR specialist)")}</h4>
           <div className="row">
-            <Field label="Department">
+            <Field label={t("Department")}>
               <select value={form.departmentId} onChange={(e) => set("departmentId", e.target.value)} required>
-                <option value="">Select a department</option>
+                <option value="">{t("Select a department")}</option>
                 {(departments.data ?? []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.displayName} ({d.departmentCode})
@@ -702,12 +703,12 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
                 ))}
               </select>
             </Field>
-            <Field label="Job title">
+            <Field label={t("Job title")}>
               <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} required />
             </Field>
-            <Field label="Role profile (optional)">
+            <Field label={t("Role profile (optional)")}>
               <select value={form.roleProfileId} onChange={(e) => set("roleProfileId", e.target.value)}>
-                <option value="">None</option>
+                <option value="">{t("None")}</option>
                 {(roles.data ?? []).map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.titleName}
@@ -717,15 +718,15 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
             </Field>
           </div>
           <div className="row">
-            <Field label="Effective from (UTC)">
+            <Field label={t("Effective from (UTC)")}>
               <input type="datetime-local" value={form.effectiveFrom} onChange={(e) => set("effectiveFrom", e.target.value)} required />
             </Field>
-            <Field label="Decision reference (optional)">
+            <Field label={t("Decision reference (optional)")}>
               <input value={form.decisionRef} onChange={(e) => set("decisionRef", e.target.value)} />
             </Field>
           </div>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Record transfer" />
+          <SubmitRow busy={busy} label={t("Record transfer")} />
         </form>
       ) : null}
     </div>
@@ -736,28 +737,28 @@ function StatusHistoryPanel({ auth, employeeId }: { auth: Auth; employeeId: stri
   const history = useAsync(() => listStatusHistory(auth, employeeId), [employeeId, auth.username]);
   return (
     <div>
-      <h3>Status history</h3>
-      <p className="muted">Every status change is kept here with its effective time and the decision that caused it. Records are never deleted.</p>
-      {history.loading ? <p role="status">Loading status history...</p> : null}
+      <h3>{t("Status history")}</h3>
+      <p className="muted">{t("Every status change is kept here with its effective time and the decision that caused it. Records are never deleted.")}</p>
+      {history.loading ? <p role="status">{t("Loading status history...")}</p> : null}
       <ErrorBanner error={history.error} />
-      {history.data !== null && history.data.length === 0 ? <EmptyNote text="No status history yet." /> : null}
+      {history.data !== null && history.data.length === 0 ? <EmptyNote text={t("No status history yet.")} /> : null}
       {history.data !== null && history.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>From</th>
-                <th>To</th>
-                <th>Effective at</th>
-                <th>Decision</th>
-                <th>Recorded at</th>
+                <th>{t("From")}</th>
+                <th>{t("To")}</th>
+                <th>{t("Effective at")}</th>
+                <th>{t("Decision")}</th>
+                <th>{t("Recorded at")}</th>
               </tr>
             </thead>
             <tbody>
               {history.data.map((h) => (
                 <tr key={h.id}>
                   <td>{h.oldStatus}</td>
-                  <td><Badge tone={toneFor(h.newStatus)}>{h.newStatus}</Badge></td>
+                  <td><Badge tone={toneFor(h.newStatus)}>{statusLabel(h.newStatus)}</Badge></td>
                   <td>{fmtDateTime(h.effectiveAt)}</td>
                   <td>{h.decisionId}</td>
                   <td>{fmtDateTime(h.createdAt)}</td>
@@ -826,22 +827,22 @@ function DepartmentList({ auth }: { auth: Auth }) {
   }
   return (
     <section>
-      <h2>Departments</h2>
-      <p className="muted">A department must exist and be active before an employee can be assigned to it.</p>
-      {list.loading ? <p role="status">Loading departments...</p> : null}
+      <h2>{t("Departments")}</h2>
+      <p className="muted">{t("A department must exist and be active before an employee can be assigned to it.")}</p>
+      {list.loading ? <p role="status">{t("Loading departments...")}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text="No departments yet." /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No departments yet.")} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Parent</th>
-                <th>Type</th>
-                <th>Active</th>
-                <th>Created by</th>
+                <th>{t("Code")}</th>
+                <th>{t("Name")}</th>
+                <th>{t("Parent")}</th>
+                <th>{t("Type")}</th>
+                <th>{t("Active")}</th>
+                <th>{t("Created by")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -871,24 +872,24 @@ function DepartmentList({ auth }: { auth: Auth }) {
         <form id="department-form" className="card" onSubmit={submit}>
           <h3>{editing === null ? "New department" : "Edit department"}</h3>
           <div className="row">
-            <Field label="Department code">
+            <Field label={t("Department code")}>
               <input value={form.departmentCode} onChange={(e) => set("departmentCode", e.target.value)} required />
             </Field>
-            <Field label="Display name">
+            <Field label={t("Display name")}>
               <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} required />
             </Field>
-            <Field label="Department type (optional)">
+            <Field label={t("Department type (optional)")}>
               <input value={form.departmentType} onChange={(e) => set("departmentType", e.target.value)} />
             </Field>
           </div>
           <div className="row">
-            <Field label="Parent department ID (optional)">
+            <Field label={t("Parent department ID (optional)")}>
               <input value={form.parentDepartmentId} onChange={(e) => set("parentDepartmentId", e.target.value)} />
             </Field>
-            <Field label="Active">
+            <Field label={t("Active")}>
               <select value={form.active} onChange={(e) => set("active", e.target.value)}>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
+                <option value="true">{t("Active")}</option>
+                <option value="false">{t("Inactive")}</option>
               </select>
             </Field>
           </div>
@@ -927,21 +928,21 @@ function RoleProfileList({ auth }: { auth: Auth }) {
   }
   return (
     <section>
-      <h2>Role profiles</h2>
-      <p className="muted">Role profiles name the professional group and qualification used when an employee is hired or transferred.</p>
-      {list.loading ? <p role="status">Loading role profiles...</p> : null}
+      <h2>{t("Role profiles")}</h2>
+      <p className="muted">{t("Role profiles name the professional group and qualification used when an employee is hired or transferred.")}</p>
+      {list.loading ? <p role="status">{t("Loading role profiles...")}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text="No role profiles yet." /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No role profiles yet.")} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>Title</th>
-                <th>Professional group</th>
-                <th>Qualification</th>
-                <th>Description</th>
-                <th>Created by</th>
+                <th>{t("Title")}</th>
+                <th>{t("Professional group")}</th>
+                <th>{t("Qualification")}</th>
+                <th>{t("Description")}</th>
+                <th>{t("Created by")}</th>
               </tr>
             </thead>
             <tbody>
@@ -960,23 +961,23 @@ function RoleProfileList({ auth }: { auth: Auth }) {
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h3>New role profile</h3>
-          <Field label="Title name">
+          <h3>{t("New role profile")}</h3>
+          <Field label={t("Title name")}>
             <input value={form.titleName} onChange={(e) => set("titleName", e.target.value)} required />
           </Field>
           <div className="row">
-            <Field label="Professional group (optional)">
+            <Field label={t("Professional group (optional)")}>
               <input value={form.professionalGroup} onChange={(e) => set("professionalGroup", e.target.value)} />
             </Field>
-            <Field label="Qualification (optional)">
+            <Field label={t("Qualification (optional)")}>
               <input value={form.qualification} onChange={(e) => set("qualification", e.target.value)} />
             </Field>
           </div>
-          <Field label="Description (optional)">
+          <Field label={t("Description (optional)")}>
             <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label="Create role profile" />
+          <SubmitRow busy={busy} label={t("Create role profile")} />
         </form>
       ) : null}
     </section>
