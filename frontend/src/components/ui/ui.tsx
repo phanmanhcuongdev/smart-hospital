@@ -140,3 +140,33 @@ export function useForm(initial: Record<string, string>): [Record<string, string
   };
   return [form, set, reset];
 }
+
+export interface FilterChipOption { value: string; label: string; count?: number; }
+
+export function FilterChips({ label, options, value, onChange }: { label: string; options: FilterChipOption[]; value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="chips" role="group" aria-label={label}>
+      {options.map((option) => (
+        <button key={option.value} type="button" className="chip" aria-pressed={value === option.value} onClick={() => onChange(option.value)}>
+          {option.label}
+          {option.count !== undefined && (<span className="chip-count">({option.count})</span>)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function ResultCount({ shown, total, noun }: { shown: number; total: number; noun: string }) {
+  return <p className="result-count" role="status">Showing {shown} of {total} {noun}</p>;
+}
+
+export function StatCard({ label, value, detail, action, onSelect }: { label: string; value: number | string; detail: string; action: string; onSelect: () => void }) {
+  return (
+    <button type="button" className="stat-card" onClick={onSelect}>
+      <span className="stat-label">{label}</span>
+      <span className="stat-value">{value}</span>
+      {detail !== "" && <span className="stat-detail">{detail}</span>}
+      <span className="stat-action">{action}</span>
+    </button>
+  );
+}

@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Auth } from "../../lib/api";
 import { addCertification, applyDueDecisions, createDecision, createDepartment, createEmployee, createRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, updateDepartment, updateEmployee, type Certification, type Decision, type Department, type Employee } from "../../lib/api";
-import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
+import { Badge, EmptyNote, ErrorBanner, Field, ResultCount, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
 
 export type HrTab = "overview" | "certs" | "decisions" | "transfers" | "history";
 export type HrView = { name: "hr-employees" } | { name: "hr-employee"; employeeId: string; tab: HrTab } | { name: "hr-departments" } | { name: "hr-roles" };
@@ -25,6 +25,11 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
   const [query, setQuery] = useState("");
   const employees = useAsync(() => searchEmployees(auth, query), [query, auth.username]);
   const [showForm, setShowForm] = useState(false);
+  useEffect(() => {
+    const open = () => { if (auth.role === "HR_SPECIALIST") setShowForm(true); };
+    window.addEventListener("smarthms:primary-action", open);
+    return () => window.removeEventListener("smarthms:primary-action", open);
+  }, [auth.role]);
   const canHr = auth.role === "HR_SPECIALIST";
   function applyFilters(e: FormEvent) {
     e.preventDefault();
@@ -91,38 +96,41 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
       </form>
       {employees.loading ? <p role="status">Loading employees...</p> : null}
       <ErrorBanner error={employees.error} />
+      {employees.data !== null ? <ResultCount shown={employees.data.length} total={employees.data.length} noun="employees" /> : null}
       {employees.data !== null && employees.data.length === 0 ? <EmptyNote text="No employees match the search." /> : null}
       {employees.data !== null && employees.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Full name</th>
-              <th>Birth date</th>
-              <th>Status</th>
-              <th>Status effective</th>
-              <th>Created by</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.data.map((e) => (
-              <tr key={e.id}>
-                <td>{e.employeeCode}</td>
-                <td>{e.fullName}</td>
-                <td>{fmtDate(e.birthDate)}</td>
-                <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
-                <td>{fmtDateTime(e.statusEffectiveAt)}</td>
-                <td>{e.createdBy}</td>
-                <td>
-                  <button className="btn btn-small" type="button" onClick={() => go({ name: "hr-employee", employeeId: e.id, tab: "overview" })}>
-                    Open
-                  </button>
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Full name</th>
+                <th>Birth date</th>
+                <th>Status</th>
+                <th>Status effective</th>
+                <th>Created by</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {employees.data.map((e) => (
+                <tr key={e.id}>
+                  <td>{e.employeeCode}</td>
+                  <td>{e.fullName}</td>
+                  <td>{fmtDate(e.birthDate)}</td>
+                  <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
+                  <td>{fmtDateTime(e.statusEffectiveAt)}</td>
+                  <td>{e.createdBy}</td>
+                  <td>
+                    <button className="btn btn-small" type="button" onClick={() => go({ name: "hr-employee", employeeId: e.id, tab: "overview" })}>
+                      Open
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </section>
   );
@@ -394,40 +402,42 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
       <ErrorBanner error={list.error} />
       {list.data !== null && list.data.length === 0 ? <EmptyNote text="No certifications yet." /> : null}
       {list.data !== null && list.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Number</th>
-              <th>Issuer</th>
-              <th>Valid from</th>
-              <th>Valid until</th>
-              <th>Verification</th>
-              <th>Validity</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data.map((c) => (
-              <tr key={c.id}>
-                <td>{c.credentialType}</td>
-                <td>{c.credentialNo}</td>
-                <td>{c.issuer}</td>
-                <td>{fmtDate(c.validFrom)}</td>
-                <td>{fmtDate(c.validUntil)}</td>
-                <td>{c.verificationStatus}</td>
-                <td><Badge tone={toneFor(c.validity)}>{c.validity}</Badge></td>
-                <td>
-                  {canHr ? (
-                    <button className="btn btn-small" type="button" onClick={() => startEdit(c)}>
-                      Edit
-                    </button>
-                  ) : null}
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Number</th>
+                <th>Issuer</th>
+                <th>Valid from</th>
+                <th>Valid until</th>
+                <th>Verification</th>
+                <th>Validity</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.data.map((c) => (
+            <tr key={c.id} className={c.validity === "EXPIRED" || c.validity === "EXPIRING_SOON" ? "row-attention" : ""}>
+                  <td>{c.credentialType}</td>
+                  <td>{c.credentialNo}</td>
+                  <td>{c.issuer}</td>
+                  <td>{fmtDate(c.validFrom)}</td>
+                  <td>{fmtDate(c.validUntil)}</td>
+                  <td>{c.verificationStatus}</td>
+                  <td><Badge tone={toneFor(c.validity)}>{c.validity}</Badge></td>
+                  <td>
+                    {canHr ? (
+                      <button className="btn btn-small" type="button" onClick={() => startEdit(c)}>
+                        Edit
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
@@ -538,48 +548,50 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       <ErrorBanner error={list.error} />
       {list.data !== null && list.data.length === 0 ? <EmptyNote text="No decisions yet." /> : null}
       {list.data !== null && list.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Reference</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Execution</th>
-              <th>Effective at</th>
-              <th>Approved by</th>
-              <th>Reason</th>
-              <th>Created by</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data.map((d) => (
-              <tr key={d.id}>
-                <td>{d.decisionRef}</td>
-                <td>{d.decisionType}</td>
-                <td><Badge tone={toneFor(d.decisionStatus)}>{d.decisionStatus}</Badge></td>
-                <td><Badge tone={toneFor(d.executionStatus)}>{d.executionStatus}</Badge></td>
-                <td>{fmtDateTime(d.effectiveAt)}</td>
-                <td>{d.approvedBy}</td>
-                <td>{d.reason}</td>
-                <td>{d.createdBy}</td>
-                <td>
-                  {canApprove && d.decisionStatus === "PENDING" && d.createdBy !== auth.username ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(d, "approve")}>
-                      Approve
-                    </button>
-                  ) : null}
-                  {canApprove && (d.decisionStatus === "PENDING" || d.decisionStatus === "APPROVED") && d.createdBy !== auth.username ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(d, "revoke")}>
-                      Revoke
-                    </button>
-                  ) : null}
-                  {canApprove && d.createdBy === auth.username ? <span className="muted">Four-eyes: you created this decision.</span> : null}
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Execution</th>
+                <th>Effective at</th>
+                <th>Approved by</th>
+                <th>Reason</th>
+                <th>Created by</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.data.map((d) => (
+            <tr key={d.id} className={d.decisionStatus === "PENDING" ? "row-attention" : ""}>
+                  <td>{d.decisionRef}</td>
+                  <td>{d.decisionType}</td>
+                  <td><Badge tone={toneFor(d.decisionStatus)}>{d.decisionStatus}</Badge></td>
+                  <td><Badge tone={toneFor(d.executionStatus)}>{d.executionStatus}</Badge></td>
+                  <td>{fmtDateTime(d.effectiveAt)}</td>
+                  <td>{d.approvedBy}</td>
+                  <td>{d.reason}</td>
+                  <td>{d.createdBy}</td>
+                  <td>
+                    {canApprove && d.decisionStatus === "PENDING" && d.createdBy !== auth.username ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(d, "approve")}>
+                        Approve
+                      </button>
+                    ) : null}
+                    {canApprove && (d.decisionStatus === "PENDING" || d.decisionStatus === "APPROVED") && d.createdBy !== auth.username ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(d, "revoke")}>
+                        Revoke
+                      </button>
+                    ) : null}
+                    {canApprove && d.createdBy === auth.username ? <span className="muted">Four-eyes: you created this decision.</span> : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
@@ -647,32 +659,34 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       <ErrorBanner error={assignments.error} />
       {assignments.data !== null && assignments.data.length === 0 ? <EmptyNote text="No assignments yet." /> : null}
       {assignments.data !== null && assignments.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Assignment</th>
-              <th>Department</th>
-              <th>Job title</th>
-              <th>Role profile</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assignments.data.map((a) => (
-              <tr key={a.id}>
-                <td>{shortId(a.id)}</td>
-                <td>{a.departmentCode}</td>
-                <td>{a.jobTitle}</td>
-                <td>{a.roleProfileId}</td>
-                <td>{fmtDateTime(a.startAt)}</td>
-                <td>{fmtDateTime(a.endAt)}</td>
-                <td><Badge tone={toneFor(a.status)}>{a.status}</Badge></td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Department</th>
+                <th>Job title</th>
+                <th>Role profile</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {assignments.data.map((a) => (
+                <tr key={a.id}>
+                  <td>{shortId(a.id)}</td>
+                  <td>{a.departmentCode}</td>
+                  <td>{a.jobTitle}</td>
+                  <td>{a.roleProfileId}</td>
+                  <td>{fmtDateTime(a.startAt)}</td>
+                  <td>{fmtDateTime(a.endAt)}</td>
+                  <td><Badge tone={toneFor(a.status)}>{a.status}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
@@ -728,28 +742,30 @@ function StatusHistoryPanel({ auth, employeeId }: { auth: Auth; employeeId: stri
       <ErrorBanner error={history.error} />
       {history.data !== null && history.data.length === 0 ? <EmptyNote text="No status history yet." /> : null}
       {history.data !== null && history.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>From</th>
-              <th>To</th>
-              <th>Effective at</th>
-              <th>Decision</th>
-              <th>Recorded at</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.data.map((h) => (
-              <tr key={h.id}>
-                <td>{h.oldStatus}</td>
-                <td><Badge tone={toneFor(h.newStatus)}>{h.newStatus}</Badge></td>
-                <td>{fmtDateTime(h.effectiveAt)}</td>
-                <td>{h.decisionId}</td>
-                <td>{fmtDateTime(h.createdAt)}</td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>From</th>
+                <th>To</th>
+                <th>Effective at</th>
+                <th>Decision</th>
+                <th>Recorded at</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {history.data.map((h) => (
+                <tr key={h.id}>
+                  <td>{h.oldStatus}</td>
+                  <td><Badge tone={toneFor(h.newStatus)}>{h.newStatus}</Badge></td>
+                  <td>{fmtDateTime(h.effectiveAt)}</td>
+                  <td>{h.decisionId}</td>
+                  <td>{fmtDateTime(h.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );
@@ -762,6 +778,18 @@ function DepartmentList({ auth }: { auth: Auth }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canHr = auth.role === "HR_SPECIALIST";
+  useEffect(() => {
+    const focusForm = () => {
+      const form = document.getElementById("department-form");
+      if (form !== null) {
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+        const first = form.querySelector("input, select, textarea");
+        if (first instanceof HTMLElement) first.focus();
+      }
+    };
+    window.addEventListener("smarthms:primary-action", focusForm);
+    return () => window.removeEventListener("smarthms:primary-action", focusForm);
+  }, []);
   function startEdit(d: Department) {
     setEditing(d);
     set("departmentCode", d.departmentCode);
@@ -804,41 +832,43 @@ function DepartmentList({ auth }: { auth: Auth }) {
       <ErrorBanner error={list.error} />
       {list.data !== null && list.data.length === 0 ? <EmptyNote text="No departments yet." /> : null}
       {list.data !== null && list.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Parent</th>
-              <th>Type</th>
-              <th>Active</th>
-              <th>Created by</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data.map((d) => (
-              <tr key={d.id}>
-                <td>{d.departmentCode}</td>
-                <td>{d.displayName}</td>
-                <td>{d.parentDepartmentId}</td>
-                <td>{d.departmentType}</td>
-                <td><Badge tone={d.active ? "ok" : "bad"}>{d.active ? "ACTIVE" : "INACTIVE"}</Badge></td>
-                <td>{d.createdBy}</td>
-                <td>
-                  {canHr ? (
-                    <button className="btn btn-small" type="button" onClick={() => startEdit(d)}>
-                      Edit
-                    </button>
-                  ) : null}
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Parent</th>
+                <th>Type</th>
+                <th>Active</th>
+                <th>Created by</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.data.map((d) => (
+                <tr key={d.id}>
+                  <td>{d.departmentCode}</td>
+                  <td>{d.displayName}</td>
+                  <td>{d.parentDepartmentId}</td>
+                  <td>{d.departmentType}</td>
+                  <td><Badge tone={d.active ? "ok" : "bad"}>{d.active ? "ACTIVE" : "INACTIVE"}</Badge></td>
+                  <td>{d.createdBy}</td>
+                  <td>
+                    {canHr ? (
+                      <button className="btn btn-small" type="button" onClick={() => startEdit(d)}>
+                        Edit
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {canHr ? (
-        <form className="card" onSubmit={submit}>
+        <form id="department-form" className="card" onSubmit={submit}>
           <h3>{editing === null ? "New department" : "Edit department"}</h3>
           <div className="row">
             <Field label="Department code">
@@ -903,28 +933,30 @@ function RoleProfileList({ auth }: { auth: Auth }) {
       <ErrorBanner error={list.error} />
       {list.data !== null && list.data.length === 0 ? <EmptyNote text="No role profiles yet." /> : null}
       {list.data !== null && list.data.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Professional group</th>
-              <th>Qualification</th>
-              <th>Description</th>
-              <th>Created by</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.data.map((r) => (
-              <tr key={r.id}>
-                <td>{r.titleName}</td>
-                <td>{r.professionalGroup}</td>
-                <td>{r.qualification}</td>
-                <td>{r.description}</td>
-                <td>{r.createdBy}</td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Professional group</th>
+                <th>Qualification</th>
+                <th>Description</th>
+                <th>Created by</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.data.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.titleName}</td>
+                  <td>{r.professionalGroup}</td>
+                  <td>{r.qualification}</td>
+                  <td>{r.description}</td>
+                  <td>{r.createdBy}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>

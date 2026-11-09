@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import type { Auth } from "../../lib/api";
 import { addAddendum, addDiagnosis, addVitals, archiveRecord, confirmAddendum, createOrder, createPrescription, encounterAction, getEncounterDetail, listAddenda, listResults, listVersions, lockRecord, listEncounters, openEncounter, orderAction, prescriptionAction, receiveResult, submitRecord, type Addendum, type CResult, type Encounter, type EncounterDetail, type Prescription, type RecordVersion } from "../../lib/api";
-import { Badge, EmptyNote, ErrorBanner, Field, SubmitRow, errText, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
+import { Badge, EmptyNote, ErrorBanner, Field, FilterChips, ResultCount, SubmitRow, errText, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
 
 export type EmrTab = "overview" | "vitals" | "orders" | "results" | "prescriptions" | "record" | "addenda";
 export type EmrView = { name: "emr-list" } | { name: "emr-detail"; encounterId: string; tab: EmrTab };
@@ -20,6 +20,15 @@ export function EmrScreens({ auth, view, go }: { auth: Auth; view: EmrView; go: 
 function EncounterList({ auth, go }: { auth: Auth; go: (v: EmrView) => void }) {
   const list = useAsync(() => listEncounters(auth), [auth.username]);
   const [showForm, setShowForm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  useEffect(() => {
+    const open = () => { if (auth.role === "DOCTOR" || auth.role === "RECEPTION") setShowForm(true); };
+    window.addEventListener("smarthms:primary-action", open);
+    return () => window.removeEventListener("smarthms:primary-action", open);
+  }, [auth.role]);
+  const allEncounters = list.data ?? [];
+  const encounterStatuses = Array.from(new Set(allEncounters.map((e) => e.status))).sort();
+  const shownEncounters = statusFilter === "ALL" ? allEncounters : allEncounters.filter((e) => e.status === statusFilter);
   const canOpen = auth.role === "DOCTOR" || auth.role === "RECEPTION";
   return (
     <section>
@@ -45,46 +54,55 @@ function EncounterList({ auth, go }: { auth: Auth; go: (v: EmrView) => void }) {
       ) : null}
       {list.loading ? <p role="status">Loading encounters...</p> : null}
       <ErrorBanner error={list.error} />
+      {list.data !== null && list.data.length > 0 ? (
+        <>
+          <FilterChips label="Filter encounters by status" value={statusFilter} onChange={setStatusFilter} options={[{ value: "ALL", label: "All", count: allEncounters.length }, ...encounterStatuses.map((s) => ({ value: s, label: s.split("_").join(" "), count: allEncounters.filter((e) => e.status === s).length }))]} />
+          <ResultCount shown={shownEncounters.length} total={allEncounters.length} noun="encounters" />
+        </>
+      ) : null}
       {list.data !== null && list.data.length === 0 ? <EmptyNote text="No encounters yet." /> : null}
-      {list.data !== null && list.data.length > 0 ? <EncounterTable encounters={list.data} go={go} /> : null}
+      {list.data !== null && list.data.length > 0 && shownEncounters.length === 0 ? <EmptyNote text="No encounters match this status." /> : null}
+      {shownEncounters.length > 0 ? <EncounterTable encounters={shownEncounters} go={go} /> : null}
     </section>
   );
 }
 
 function EncounterTable({ encounters, go }: { encounters: Encounter[]; go: (v: EmrView) => void }) {
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Encounter</th>
-          <th>Patient</th>
-          <th>Attending</th>
-          <th>Status</th>
-          <th>Started</th>
-          <th>Opened by</th>
-          <th>Row</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {encounters.map((e) => (
-          <tr key={e.id}>
-            <td>{shortId(e.id)}</td>
-            <td>{shortId(e.patientId)}</td>
-            <td>{shortId(e.attendingEmployeeId)}</td>
-            <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
-            <td>{fmtDateTime(e.startedAt)}</td>
-            <td>{e.createdBy}</td>
-            <td>{e.rowVersion}</td>
-            <td>
-              <button className="btn btn-small" type="button" onClick={() => go({ name: "emr-detail", encounterId: e.id, tab: "overview" })}>
-                Open
-              </button>
-            </td>
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Encounter</th>
+            <th>Patient</th>
+            <th>Attending</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Opened by</th>
+            <th>Row</th>
+            <th></th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {encounters.map((e) => (
+            <tr key={e.id}>
+              <td>{shortId(e.id)}</td>
+              <td>{shortId(e.patientId)}</td>
+              <td>{shortId(e.attendingEmployeeId)}</td>
+              <td><Badge tone={toneFor(e.status)}>{e.status}</Badge></td>
+              <td>{fmtDateTime(e.startedAt)}</td>
+              <td>{e.createdBy}</td>
+              <td>{e.rowVersion}</td>
+              <td>
+                <button className="btn btn-small" type="button" onClick={() => go({ name: "emr-detail", encounterId: e.id, tab: "overview" })}>
+                  Open
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -312,30 +330,32 @@ function VitalsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
       )}
       {detail.observations.length === 0 ? <EmptyNote text="No vital signs recorded yet." /> : null}
       {detail.observations.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>Value</th>
-              <th>Unit</th>
-              <th>Observed at</th>
-              <th>Source</th>
-              <th>Quality</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.observations.map((o) => (
-              <tr key={o.id}>
-                <td>{o.metricCode}</td>
-                <td>{o.numericValue !== null ? o.numericValue : o.textValue}</td>
-                <td>{o.unitCode}</td>
-                <td>{fmtDateTime(o.observedAt)}</td>
-                <td>{o.sourceType}</td>
-                <td><Badge tone={toneFor(o.quality)}>{o.quality}</Badge></td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+                <th>Unit</th>
+                <th>Observed at</th>
+                <th>Source</th>
+                <th>Quality</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {detail.observations.map((o) => (
+                <tr key={o.id}>
+                  <td>{o.metricCode}</td>
+                  <td>{o.numericValue !== null ? o.numericValue : o.textValue}</td>
+                  <td>{o.unitCode}</td>
+                  <td>{fmtDateTime(o.observedAt)}</td>
+                  <td>{o.sourceType}</td>
+                  <td><Badge tone={toneFor(o.quality)}>{o.quality}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );
@@ -396,28 +416,30 @@ function DiagnosisPanel({ auth, detail, reload }: { auth: Auth; detail: Encounte
       )}
       {detail.diagnoses.length === 0 ? <EmptyNote text="No diagnoses recorded yet." /> : null}
       {detail.diagnoses.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>ICD-10</th>
-              <th>Narrative</th>
-              <th>Status</th>
-              <th>Confirmed by</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.diagnoses.map((d) => (
-              <tr key={d.id}>
-                <td>{d.type}</td>
-                <td>{d.icd10Code}</td>
-                <td>{d.narrative}</td>
-                <td><Badge tone={toneFor(d.status)}>{d.status}</Badge></td>
-                <td>{d.confirmedBy}</td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>ICD-10</th>
+                <th>Narrative</th>
+                <th>Status</th>
+                <th>Confirmed by</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {detail.diagnoses.map((d) => (
+                <tr key={d.id}>
+                  <td>{d.type}</td>
+                  <td>{d.icd10Code}</td>
+                  <td>{d.narrative}</td>
+                  <td><Badge tone={toneFor(d.status)}>{d.status}</Badge></td>
+                  <td>{d.confirmedBy}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );
@@ -480,58 +502,60 @@ function OrdersPanel({ auth, detail, reload, go, encounterId }: { auth: Auth; de
       <ErrorBanner error={actionError} />
       {detail.orders.length === 0 ? <EmptyNote text="No orders yet." /> : null}
       {detail.orders.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>External ref</th>
-              <th>Ordered by</th>
-              <th>Ordered at</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.orders.map((o) => (
-              <tr key={o.id}>
-                <td>{shortId(o.id)}</td>
-                <td>{o.type}</td>
-                <td>
-                  <Badge tone={toneFor(o.status)}>{o.status}</Badge>
-                </td>
-                <td>{o.externalOrderRef}</td>
-                <td>{o.orderedBy}</td>
-                <td>{fmtDateTime(o.orderedAt)}</td>
-                <td>
-                  {isDoctor && o.status === "DRAFT" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(o.id, "submit")}>
-                      Submit
-                    </button>
-                  ) : null}
-                  {isCls && o.status === "ORDERED" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(o.id, "acknowledge")}>
-                      Acknowledge
-                    </button>
-                  ) : null}
-                  {isCls && o.status === "ACKNOWLEDGED" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(o.id, "start")}>
-                      Start
-                    </button>
-                  ) : null}
-                  {isDoctor && o.status !== "COMPLETED" && o.status !== "CANCELLED" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(o.id, "cancel")}>
-                      Cancel
-                    </button>
-                  ) : null}
-                  <button className="btn btn-small" type="button" onClick={() => go({ name: "emr-detail", encounterId, tab: "results" })}>
-                    Results
-                  </button>
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>External ref</th>
+                <th>Ordered by</th>
+                <th>Ordered at</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {detail.orders.map((o) => (
+                <tr key={o.id}>
+                  <td>{shortId(o.id)}</td>
+                  <td>{o.type}</td>
+                  <td>
+                    <Badge tone={toneFor(o.status)}>{o.status}</Badge>
+                  </td>
+                  <td>{o.externalOrderRef}</td>
+                  <td>{o.orderedBy}</td>
+                  <td>{fmtDateTime(o.orderedAt)}</td>
+                  <td>
+                    {isDoctor && o.status === "DRAFT" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(o.id, "submit")}>
+                        Submit
+                      </button>
+                    ) : null}
+                    {isCls && o.status === "ORDERED" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(o.id, "acknowledge")}>
+                        Acknowledge
+                      </button>
+                    ) : null}
+                    {isCls && o.status === "ACKNOWLEDGED" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(o.id, "start")}>
+                        Start
+                      </button>
+                    ) : null}
+                    {isDoctor && o.status !== "COMPLETED" && o.status !== "CANCELLED" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(o.id, "cancel")}>
+                        Cancel
+                      </button>
+                    ) : null}
+                    <button className="btn btn-small" type="button" onClick={() => go({ name: "emr-detail", encounterId, tab: "results" })}>
+                      Results
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );
@@ -602,37 +626,39 @@ function ResultsPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
           <ErrorBanner error={results.error} />
           {results.data !== null && results.data.length === 0 ? <EmptyNote text="No results for this order yet. The result is pending." /> : null}
           {results.data !== null && results.data.length > 0 ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Result</th>
-                  <th>Source</th>
-                  <th>Source result ID</th>
-                  <th>Version</th>
-                  <th>Received at</th>
-                  <th>Abnormal flag</th>
-                  <th>Quality</th>
-                  <th>Payload</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.data.map((r) => (
-                  <tr key={r.id} className={r.quality === "QUARANTINED" ? "row-quarantined" : ""}>
-                    <td>{shortId(r.id)}</td>
-                    <td>{r.sourceSystem}</td>
-                    <td>{r.sourceResultId}</td>
-                    <td>{r.sourceVersion}</td>
-                    <td>{fmtDateTime(r.receivedAt)}</td>
-                    <td>{r.abnormalFlag}</td>
-                    <td>
-                      <Badge tone={toneFor(r.quality)}>{r.quality}</Badge>
-                      {r.duplicate ? " (duplicate)" : ""}
-                    </td>
-                    <td>{r.resultPayload}</td>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Result</th>
+                    <th>Source</th>
+                    <th>Source result ID</th>
+                    <th>Version</th>
+                    <th>Received at</th>
+                    <th>Abnormal flag</th>
+                    <th>Quality</th>
+                    <th>Payload</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {results.data.map((r) => (
+          <tr key={r.id} className={r.abnormalFlag === true ? "row-attention" : r.quality === "QUARANTINED" ? "row-quarantined" : ""}>
+                      <td>{shortId(r.id)}</td>
+                      <td>{r.sourceSystem}</td>
+                      <td>{r.sourceResultId}</td>
+                      <td>{r.sourceVersion}</td>
+                      <td>{fmtDateTime(r.receivedAt)}</td>
+            <td>{r.abnormalFlag === true ? <Badge tone="bad">Abnormal</Badge> : r.abnormalFlag === false ? "No" : "—"}</td>
+                      <td>
+                        <Badge tone={toneFor(r.quality)}>{r.quality}</Badge>
+                        {r.duplicate ? " (duplicate)" : ""}
+                      </td>
+                      <td>{r.resultPayload}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
         </div>
       )}
@@ -733,7 +759,7 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
       <h3>Prescriptions (SCR-EMR-06)</h3>
       <p className="muted">Allergy warnings come from the prescription response. A known allergy blocks the prescription; missing or unconfirmed allergy data only produces a warning. Missing allergy data never means the medication is safe.</p>
       {created !== null ? (
-        <div className="card">
+    <div className={created.allergyWarnings.length > 0 ? "allergy-alert" : "card"}>
           <h4>Prescription created</h4>
           <p>
             Prescription {shortId(created.id)} — status <Badge tone={toneFor(created.status)}>{created.status}</Badge>
@@ -751,50 +777,52 @@ function PrescriptionsPanel({ auth, detail, reload }: { auth: Auth; detail: Enco
       <ErrorBanner error={actionError} />
       {detail.prescriptions.length === 0 ? <EmptyNote text="No prescriptions yet." /> : null}
       {detail.prescriptions.length > 0 ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Prescription</th>
-              <th>Prescriber</th>
-              <th>Status</th>
-              <th>Issued at</th>
-              <th>Items</th>
-              <th>Allergy warnings</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {detail.prescriptions.map((p) => (
-              <tr key={p.id}>
-                <td>{shortId(p.id)}</td>
-                <td>{p.prescriberId}</td>
-                <td><Badge tone={toneFor(p.status)}>{p.status}</Badge></td>
-                <td>{fmtDateTime(p.issuedAt)}</td>
-                <td>{p.items.map((it) => it.medicationLabel + " " + (it.dose ?? "") + " " + (it.frequency ?? "")).join("; ")}</td>
-                <td>
-                  {p.allergyWarnings.length === 0 ? "None returned" : null}
-                  {p.allergyWarnings.map((w, i) => (
-                    <div key={i}>
-                      <Badge tone={allergyTone(w)}>{w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING"}</Badge> {w}
-                    </div>
-                  ))}
-                </td>
-                <td>
-                  {isDoctor && p.status === "ACTIVE" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(p.id, "issue")}>
-                      Issue
-                    </button>
-                  ) : null}
-                  {isDoctor && p.status === "ACTIVE" ? (
-                    <button className="btn btn-small" type="button" onClick={() => act(p.id, "cancel")}>
-                      Cancel
-                    </button>
-                  ) : null}
-                </td>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Prescription</th>
+                <th>Prescriber</th>
+                <th>Status</th>
+                <th>Issued at</th>
+                <th>Items</th>
+                <th>Allergy warnings</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {detail.prescriptions.map((p) => (
+      <tr key={p.id} className={p.allergyWarnings.length > 0 ? "row-attention" : ""}>
+                  <td>{shortId(p.id)}</td>
+                  <td>{p.prescriberId}</td>
+                  <td><Badge tone={toneFor(p.status)}>{p.status}</Badge></td>
+                  <td>{fmtDateTime(p.issuedAt)}</td>
+                  <td>{p.items.map((it) => it.medicationLabel + " " + (it.dose ?? "") + " " + (it.frequency ?? "")).join("; ")}</td>
+                  <td>
+                    {p.allergyWarnings.length === 0 ? "None returned" : null}
+                    {p.allergyWarnings.map((w, i) => (
+                      <div key={i}>
+                        <Badge tone={allergyTone(w)}>{w.toLowerCase().includes("known") ? "KNOWN" : w.toLowerCase().includes("unknown") ? "UNKNOWN" : "WARNING"}</Badge> {w}
+                      </div>
+                    ))}
+                  </td>
+                  <td>
+                    {isDoctor && p.status === "ACTIVE" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(p.id, "issue")}>
+                        Issue
+                      </button>
+                    ) : null}
+                    {isDoctor && p.status === "ACTIVE" ? (
+                      <button className="btn btn-small" type="button" onClick={() => act(p.id, "cancel")}>
+                        Cancel
+                      </button>
+                    ) : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       {isDoctor ? (
         <form className="card" onSubmit={submit}>
@@ -918,26 +946,28 @@ function RecordPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterDe
           <ErrorBanner error={versions.error} />
           {versions.data !== null && versions.data.length === 0 ? <EmptyNote text="No versions recorded yet." /> : null}
           {versions.data !== null && versions.data.length > 0 ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Version</th>
-                  <th>SHA-256</th>
-                  <th>Created at</th>
-                  <th>Created by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {versions.data.map((v) => (
-                  <tr key={v.versionNo}>
-                    <td>{v.versionNo}</td>
-                    <td>{v.sha256Hex}</td>
-                    <td>{fmtDateTime(v.versionCreatedAt)}</td>
-                    <td>{v.createdBy}</td>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Version</th>
+                    <th>SHA-256</th>
+                    <th>Created at</th>
+                    <th>Created by</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {versions.data.map((v) => (
+                    <tr key={v.versionNo}>
+                      <td>{v.versionNo}</td>
+                      <td>{v.sha256Hex}</td>
+                      <td>{fmtDateTime(v.versionCreatedAt)}</td>
+                      <td>{v.createdBy}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
         </div>
       )}
@@ -1011,42 +1041,44 @@ function AddendaPanel({ auth, detail, reload }: { auth: Auth; detail: EncounterD
           <ErrorBanner error={addenda.error} />
           {addenda.data !== null && addenda.data.length === 0 ? <EmptyNote text="No addenda yet." /> : null}
           {addenda.data !== null && addenda.data.length > 0 ? (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Addendum</th>
-                  <th>Reason</th>
-                  <th>Content</th>
-                  <th>Status</th>
-                  <th>Created at</th>
-                  <th>Created by</th>
-                  <th>Confirmed at</th>
-                  <th>Confirmed by</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {addenda.data.map((a) => (
-                  <tr key={a.id}>
-                    <td>{shortId(a.id)}</td>
-                    <td>{a.reason}</td>
-                    <td>{a.content}</td>
-                    <td><Badge tone={toneFor(a.confirmationStatus)}>{a.confirmationStatus}</Badge></td>
-                    <td>{fmtDateTime(a.createdAt)}</td>
-                    <td>{a.createdBy}</td>
-                    <td>{fmtDateTime(a.confirmedAt)}</td>
-                    <td>{a.confirmedBy}</td>
-                    <td>
-                      {canAdd && a.confirmationStatus === "DRAFT" ? (
-                        <button className="btn btn-small" type="button" onClick={() => confirm(a.id)}>
-                          Confirm
-                        </button>
-                      ) : null}
-                    </td>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Addendum</th>
+                    <th>Reason</th>
+                    <th>Content</th>
+                    <th>Status</th>
+                    <th>Created at</th>
+                    <th>Created by</th>
+                    <th>Confirmed at</th>
+                    <th>Confirmed by</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {addenda.data.map((a) => (
+                    <tr key={a.id}>
+                      <td>{shortId(a.id)}</td>
+                      <td>{a.reason}</td>
+                      <td>{a.content}</td>
+                      <td><Badge tone={toneFor(a.confirmationStatus)}>{a.confirmationStatus}</Badge></td>
+                      <td>{fmtDateTime(a.createdAt)}</td>
+                      <td>{a.createdBy}</td>
+                      <td>{fmtDateTime(a.confirmedAt)}</td>
+                      <td>{a.confirmedBy}</td>
+                      <td>
+                        {canAdd && a.confirmationStatus === "DRAFT" ? (
+                          <button className="btn btn-small" type="button" onClick={() => confirm(a.id)}>
+                            Confirm
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
         </div>
       )}
