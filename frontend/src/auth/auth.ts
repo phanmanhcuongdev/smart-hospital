@@ -4,11 +4,6 @@
 // Demo environment only: never use real credentials here.
 
 export type Role =
-  | "DOCTOR"
-  | "NURSE"
-  | "CLS_TECHNICIAN"
-  | "RECORDS_MANAGER"
-  | "RECEPTION"
   | "HR_SPECIALIST"
   | "HR_APPROVER";
 
@@ -19,21 +14,11 @@ export interface DemoUser {
 }
 
 export const DEMO_USERS: DemoUser[] = [
-  { username: "EMP-DEMO-001", role: "DOCTOR", label: "Doctor - seed clinician (EMP-DEMO-001)" },
-  { username: "demo-nurse", role: "NURSE", label: "Nurse" },
-  { username: "demo-cls", role: "CLS_TECHNICIAN", label: "CLS technician" },
-  { username: "demo-records", role: "RECORDS_MANAGER", label: "Records manager" },
-  { username: "demo-reception", role: "RECEPTION", label: "Reception" },
   { username: "demo-hr", role: "HR_SPECIALIST", label: "HR specialist" },
   { username: "demo-hr-approver", role: "HR_APPROVER", label: "HR approver" },
 ];
 
-export const CLINICAL_ROLES: Role[] = ["DOCTOR", "NURSE", "CLS_TECHNICIAN", "RECORDS_MANAGER", "RECEPTION"];
 export const HR_ROLES: Role[] = ["HR_SPECIALIST", "HR_APPROVER"];
-
-export function isClinical(role: Role): boolean {
-  return CLINICAL_ROLES.includes(role);
-}
 
 export function isHr(role: Role): boolean {
   return HR_ROLES.includes(role);

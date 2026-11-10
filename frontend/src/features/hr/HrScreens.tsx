@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { statusLabel, t } from "../../lib/i18n";
+import { statusLabel } from "../../lib/labels";
 import type { Auth } from "../../lib/api";
-import { addCertification, applyDueDecisions, createDecision, createDepartment, createEmployee, createRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, updateDepartment, updateEmployee, type Certification, type Decision, type Department, type Employee } from "../../lib/api";
+import { addCertification, applyDueDecisions, createDecision, updateDecision, deleteDecision, createDepartment, createEmployee, createRoleProfile, updateRoleProfile, deleteRoleProfile, createTransfer, decisionAction, getEmployee, listAssignments, listCertifications, listDecisions, listDepartments, listRoleProfiles, listStatusHistory, searchEmployees, updateCertification, deleteCertification, updateDepartment, deleteDepartment, updateEmployee, deleteEmployee, type Certification, type Decision, type Department, type Employee, type RoleProfile } from "../../lib/api";
 import { Badge, EmptyNote, ErrorBanner, Field, ResultCount, SubmitRow, errText, fmtDate, fmtDateTime, shortId, toInstant, toneFor, useAsync, useForm } from "../../components/ui/ui";
 
 export type HrTab = "overview" | "certs" | "decisions" | "transfers" | "history";
@@ -22,7 +22,7 @@ export function HrScreens({ auth, view, go }: { auth: Auth; view: HrView; go: (v
 
 function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
   const departments = useAsync(() => listDepartments(auth), [auth.username]);
-  const [filters, setFilters] = useState({ departmentId: "", status: "", jobTitle: "" });
+  const [filters, setFilters] = useState({ departmentId: "", status: "", jobTitle: "", q: "" });
   const [query, setQuery] = useState("");
   const employees = useAsync(() => searchEmployees(auth, query), [query, auth.username]);
   const [showForm, setShowForm] = useState(false);
@@ -44,13 +44,16 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
     if (filters.jobTitle.trim() !== "") {
       params.set("jobTitle", filters.jobTitle.trim());
     }
+    if (filters.q.trim() !== "") {
+      params.set("q", filters.q.trim());
+    }
     const q = params.toString();
     setQuery(q === "" ? "" : "?" + q);
   }
   return (
     <section>
-      <h2>{t("Employees")}</h2>
-      <p className="muted">{t("Search and filter employees by department, status and job title. Creating an employee grants no system role.")}</p>
+      <h2>{"Nhân viên"}</h2>
+      <p className="muted">{"Tìm kiếm và lọc nhân viên theo phòng ban, trạng thái và chức danh. Tạo nhân viên không cấp quyền hệ thống."}</p>
       {canHr ? (
         <button className="btn" type="button" onClick={() => setShowForm(true)}>
           New employee
@@ -68,11 +71,11 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
         />
       ) : null}
       <form className="card" onSubmit={applyFilters}>
-        <h3>{t("Search")}</h3>
+        <h3>{"Tìm kiếm"}</h3>
         <div className="row">
-          <Field label={t("Department")}>
+          <Field label={"Phòng ban"}>
             <select value={filters.departmentId} onChange={(e) => setFilters((f) => ({ ...f, departmentId: e.target.value }))}>
-              <option value="">{t("All departments")}</option>
+              <option value="">{"Tất cả phòng ban"}</option>
               {(departments.data ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.displayName} ({d.departmentCode})
@@ -80,36 +83,39 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
               ))}
             </select>
           </Field>
-          <Field label={t("Status")}>
+          <Field label={"Trạng thái"}>
             <select value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}>
-              <option value="">{t("All statuses")}</option>
-              <option value="ONBOARDING">{t("ONBOARDING")}</option>
-              <option value="ACTIVE">{t("ACTIVE")}</option>
-              <option value="SUSPENDED">{t("SUSPENDED")}</option>
-              <option value="TERMINATED">{t("TERMINATED")}</option>
+              <option value="">{"Tất cả trạng thái"}</option>
+              <option value="ONBOARDING">{"Đang nhận việc"}</option>
+              <option value="ACTIVE">{"Đang hoạt động"}</option>
+              <option value="SUSPENDED">{"Tạm đình chỉ"}</option>
+              <option value="TERMINATED">{"Đã nghỉ việc"}</option>
             </select>
           </Field>
-          <Field label={t("Job title")}>
+          <Field label={"Chức danh"}>
             <input value={filters.jobTitle} onChange={(e) => setFilters((f) => ({ ...f, jobTitle: e.target.value }))} />
           </Field>
+          <Field label={"Tìm kiếm"}>
+            <input value={filters.q} onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))} placeholder={"Tên hoặc mã nhân viên"} />
+          </Field>
         </div>
-        <SubmitRow busy={false} label={t("Search")} />
+        <SubmitRow busy={false} label={"Tìm kiếm"} />
       </form>
-      {employees.loading ? <p role="status">{t("Loading employees...")}</p> : null}
+      {employees.loading ? <p role="status">{"Đang tải danh sách nhân viên..."}</p> : null}
       <ErrorBanner error={employees.error} />
-      {employees.data !== null ? <ResultCount shown={employees.data.length} total={employees.data.length} noun={t("employees")} /> : null}
-      {employees.data !== null && employees.data.length === 0 ? <EmptyNote text={t("No employees match the search.")} /> : null}
+      {employees.data !== null ? <ResultCount shown={employees.data.length} total={employees.data.length} noun={"nhân viên"} /> : null}
+      {employees.data !== null && employees.data.length === 0 ? <EmptyNote text={"Không có nhân viên nào khớp với tìm kiếm."} /> : null}
       {employees.data !== null && employees.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Code")}</th>
-                <th>{t("Full name")}</th>
-                <th>{t("Birth date")}</th>
-                <th>{t("Status")}</th>
-                <th>{t("Status effective")}</th>
-                <th>{t("Created by")}</th>
+                <th>{"Mã"}</th>
+                <th>{"Họ và tên"}</th>
+                <th>{"Ngày sinh"}</th>
+                <th>{"Trạng thái"}</th>
+                <th>{"Trạng thái hiệu lực"}</th>
+                <th>{"Người tạo"}</th>
                 <th></th>
               </tr>
             </thead>
@@ -179,6 +185,7 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
       } else {
         await updateEmployee(auth, initial.id, {
           employeeCode: initial.employeeCode,
+          departmentId: empty(form.departmentId),
           fullName: form.fullName.trim(),
           birthDate: empty(form.birthDate),
           gender: empty(form.gender),
@@ -199,39 +206,39 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
     <form className="card" onSubmit={submit}>
       <h3>{isCreate ? "New employee" : "Edit employee " + (initial?.employeeCode ?? "")}</h3>
       {isCreate ? (
-        <p className="muted">{t("The employee code is required and must be unique. Department and job title are set here; later changes to the department go through a transfer.")}</p>
+        <p className="muted">{"Mã nhân viên là bắt buộc và phải duy nhất. Phòng ban và chức danh được đặt tại đây; các thay đổi phòng ban về sau thực hiện qua chuyển đổi."}</p>
       ) : (
-        <p className="muted">{t("Department and job title are not changed here; use a transfer for those.")}</p>
+        <p className="muted">{"Phòng ban và chức danh không thay đổi tại đây; hãy dùng chuyển đổi cho các thay đổi đó."}</p>
       )}
       <div className="row">
-        <Field label={t("Employee code")}>
+        <Field label={"Mã nhân viên"}>
           <input value={form.employeeCode} onChange={(e) => set("employeeCode", e.target.value)} required disabled={!isCreate} />
         </Field>
-        <Field label={t("Full name")}>
+        <Field label={"Họ và tên"}>
           <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required />
         </Field>
       </div>
       <div className="row">
-        <Field label={t("Birth date")}>
+        <Field label={"Ngày sinh"}>
           <input type="date" value={form.birthDate} onChange={(e) => set("birthDate", e.target.value)} />
         </Field>
-        <Field label={t("Hire date")}>
+        <Field label={"Ngày tuyển dụng"}>
           <input type="date" value={form.hireDate} onChange={(e) => set("hireDate", e.target.value)} />
         </Field>
-        <Field label={t("Gender")}>
+        <Field label={"Giới tính"}>
           <select value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-            <option value="">{t("Not specified")}</option>
-            <option value="FEMALE">{t("FEMALE")}</option>
-            <option value="MALE">{t("MALE")}</option>
-            <option value="OTHER">{t("OTHER")}</option>
+            <option value="">{"Chưa chỉ định"}</option>
+            <option value="FEMALE">{"Nữ"}</option>
+            <option value="MALE">{"Nam"}</option>
+            <option value="OTHER">{"Khác"}</option>
           </select>
         </Field>
       </div>
       {isCreate ? (
         <div className="row">
-          <Field label={t("Department")}>
+          <Field label={"Phòng ban"}>
             <select value={form.departmentId} onChange={(e) => set("departmentId", e.target.value)} required>
-              <option value="">{t("Select a department")}</option>
+              <option value="">{"Chọn phòng ban"}</option>
               {(departments.data ?? []).map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.displayName} ({d.departmentCode})
@@ -239,12 +246,12 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
               ))}
             </select>
           </Field>
-          <Field label={t("Job title")}>
+          <Field label={"Chức danh"}>
             <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} required />
           </Field>
-          <Field label={t("Role profile (optional)")}>
+          <Field label={"Hồ sơ vai trò (tùy chọn)"}>
             <select value={form.roleProfileId} onChange={(e) => set("roleProfileId", e.target.value)}>
-              <option value="">{t("None")}</option>
+              <option value="">{"Không có"}</option>
               {(roles.data ?? []).map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.titleName}
@@ -255,14 +262,14 @@ function EmployeeForm({ auth, initial, onDone, onCancel }: { auth: Auth; initial
         </div>
       ) : null}
       <div className="row">
-        <Field label={t("Phone")}>
+        <Field label={"Điện thoại"}>
           <input value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         </Field>
-        <Field label={t("Email")}>
+        <Field label={"Email"}>
           <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
         </Field>
       </div>
-      <Field label={t("Address")}>
+      <Field label={"Địa chỉ"}>
         <input value={form.address} onChange={(e) => set("address", e.target.value)} />
       </Field>
       <ErrorBanner error={error} />
@@ -285,16 +292,27 @@ function hrTabLabel(t: HrTab): string {
 function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId: string; tab: HrTab; go: (v: HrView) => void }) {
   const employee = useAsync(() => getEmployee(auth, employeeId), [employeeId, auth.username]);
   const [showEdit, setShowEdit] = useState(false);
+
+  async function removeEmployee() {
+    if (emp == null) return;
+    if (!window.confirm("Xóa nhân viên này? Hành động này không thể hoàn tác.")) return;
+    try {
+      await deleteEmployee(auth, emp.id);
+      go({ name: "hr-employees" });
+    } catch (e) {
+      window.alert(errText(e));
+    }
+  }
   const canHr = auth.role === "HR_SPECIALIST";
   if (employee.loading && employee.data === null) {
-    return <p role="status">{t("Loading employee...")}</p>;
+    return <p role="status">{"Đang tải nhân viên..."}</p>;
   }
   if (employee.error !== null && employee.data === null) {
     return <ErrorBanner error={employee.error} />;
   }
   const emp = employee.data;
   if (emp === null) {
-    return <EmptyNote text={t("Employee not found.")} />;
+    return <EmptyNote text={"Không tìm thấy nhân viên."} />;
   }
   return (
     <section>
@@ -305,21 +323,26 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
         {emp.fullName} ({emp.employeeCode})
       </h2>
       <dl className="kv">
-        <div><dt>{t("Employee code")}</dt><dd>{emp.employeeCode}</dd></div>
-        <div><dt>{t("Full name")}</dt><dd>{emp.fullName}</dd></div>
-        <div><dt>{t("Birth date")}</dt><dd>{fmtDate(emp.birthDate)}</dd></div>
-        <div><dt>{t("Status")}</dt><dd><Badge tone={toneFor(emp.status)}>{statusLabel(emp.status)}</Badge></dd></div>
-        <div><dt>{t("Status effective")}</dt><dd>{fmtDateTime(emp.statusEffectiveAt)}</dd></div>
-        <div><dt>{t("Gender")}</dt><dd>{emp.gender}</dd></div>
-        <div><dt>{t("Phone")}</dt><dd>{emp.phone}</dd></div>
-        <div><dt>{t("Email")}</dt><dd>{emp.email}</dd></div>
-        <div><dt>{t("Address")}</dt><dd>{emp.address}</dd></div>
-        <div><dt>{t("Hire date")}</dt><dd>{fmtDate(emp.hireDate)}</dd></div>
-        <div><dt>{t("Created by")}</dt><dd>{emp.createdBy}</dd></div>
+        <div><dt>{"Mã nhân viên"}</dt><dd>{emp.employeeCode}</dd></div>
+        <div><dt>{"Họ và tên"}</dt><dd>{emp.fullName}</dd></div>
+        <div><dt>{"Ngày sinh"}</dt><dd>{fmtDate(emp.birthDate)}</dd></div>
+        <div><dt>{"Trạng thái"}</dt><dd><Badge tone={toneFor(emp.status)}>{statusLabel(emp.status)}</Badge></dd></div>
+        <div><dt>{"Trạng thái hiệu lực"}</dt><dd>{fmtDateTime(emp.statusEffectiveAt)}</dd></div>
+        <div><dt>{"Giới tính"}</dt><dd>{emp.gender}</dd></div>
+        <div><dt>{"Điện thoại"}</dt><dd>{emp.phone}</dd></div>
+        <div><dt>{"Email"}</dt><dd>{emp.email}</dd></div>
+        <div><dt>{"Địa chỉ"}</dt><dd>{emp.address}</dd></div>
+        <div><dt>{"Ngày tuyển dụng"}</dt><dd>{fmtDate(emp.hireDate)}</dd></div>
+        <div><dt>{"Người tạo"}</dt><dd>{emp.createdBy}</dd></div>
       </dl>
       {canHr && !showEdit ? (
         <button className="btn" type="button" onClick={() => setShowEdit(true)}>
           Edit employee
+        </button>
+      ) : null}
+      {canHr && !showEdit ? (
+        <button className="btn" type="button" onClick={removeEmployee}>
+          {"Xóa nhân viên"}
         </button>
       ) : null}
       {showEdit ? (
@@ -333,7 +356,7 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
           onCancel={() => setShowEdit(false)}
         />
       ) : null}
-      <nav className="tabs" aria-label={t("Employee sections")}>
+      <nav className="tabs" aria-label={"Các mục nhân viên"}>
         {(["overview", "certs", "decisions", "transfers", "history"] as HrTab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? "tab active" : "tab"} onClick={() => go({ name: "hr-employee", employeeId, tab: t })}>
             {hrTabLabel(t)}
@@ -397,23 +420,23 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
   }
   return (
     <div>
-      <h3>{t("Practice certificates (CCHN)")}</h3>
-      <p className="muted">{t("Validity is computed by the backend: VALID, EXPIRING_SOON (1 to 30 days left), EXPIRED (the day after the expiry date), UNVERIFIED (never eligible) or REJECTED. An expired CCHN does not lock the employee account.")}</p>
-      {list.loading ? <p role="status">{t("Loading certifications...")}</p> : null}
+      <h3>{"Chứng chỉ hành nghề (CCHN)"}</h3>
+      <p className="muted">{"Tính hiệu lực do backend tính: VALID, EXPIRING_SOON (còn 1 đến 30 ngày), EXPIRED (ngày sau ngày hết hạn), UNVERIFIED (không bao giờ đủ điều kiện) hoặc REJECTED. CCHN hết hạn không khóa tài khoản nhân viên."}</p>
+      {list.loading ? <p role="status">{"Đang tải chứng chỉ..."}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No certifications yet.")} /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={"Chưa có chứng chỉ nào."} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Type")}</th>
-                <th>{t("Number")}</th>
-                <th>{t("Issuer")}</th>
-                <th>{t("Valid from")}</th>
-                <th>{t("Valid until")}</th>
-                <th>{t("Verification")}</th>
-                <th>{t("Validity")}</th>
+                <th>{"Loại"}</th>
+                <th>{"Số"}</th>
+                <th>{"Đơn vị cấp"}</th>
+                <th>{"Có hiệu lực từ"}</th>
+                <th>{"Có hiệu lực đến"}</th>
+                <th>{"Xác minh"}</th>
+                <th>{"Hiệu lực"}</th>
                 <th></th>
               </tr>
             </thead>
@@ -432,7 +455,13 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
                       <button className="btn btn-small" type="button" onClick={() => startEdit(c)}>
                         Edit
                       </button>
-                    ) : null}
+          
+          ) : null}
+          {canHr ? (
+            <button className="btn btn-small" type="button" onClick={async () => { if (!window.confirm("Xóa chứng chỉ này? Hành động này không thể hoàn tác.")) return; try { await deleteCertification(auth, c.id); list.reload(); } catch (err: unknown) { setError(errText(err)); } }}>
+                        {"Xóa"}
+                      </button>
+          ) : null}
                   </td>
                 </tr>
               ))}
@@ -444,38 +473,38 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
         <form className="card" onSubmit={submit}>
           <h4>{editing === null ? "New certification" : "Edit certification"}</h4>
           <div className="row">
-            <Field label={t("Credential type")}>
+            <Field label={"Loại chứng chỉ"}>
               <select value={form.credentialType} onChange={(e) => set("credentialType", e.target.value)} required>
-                <option value="CCHN">{t("CCHN")}</option>
-                <option value="OTHER">{t("OTHER")}</option>
+                <option value="CCHN">{"CCHN"}</option>
+                <option value="OTHER">{"Khác"}</option>
               </select>
             </Field>
-            <Field label={t("Credential number")}>
+            <Field label={"Số chứng chỉ"}>
               <input value={form.credentialNo} onChange={(e) => set("credentialNo", e.target.value)} />
             </Field>
-            <Field label={t("Issuer")}>
+            <Field label={"Đơn vị cấp"}>
               <input value={form.issuer} onChange={(e) => set("issuer", e.target.value)} />
             </Field>
           </div>
-          <Field label={t("Scope note")}>
+          <Field label={"Ghi chú phạm vi"}>
             <input value={form.scopeNote} onChange={(e) => set("scopeNote", e.target.value)} />
           </Field>
           <div className="row">
-            <Field label={t("Valid from")}>
+            <Field label={"Có hiệu lực từ"}>
               <input type="date" value={form.validFrom} onChange={(e) => set("validFrom", e.target.value)} />
             </Field>
-            <Field label={t("Valid until")}>
+            <Field label={"Có hiệu lực đến"}>
               <input type="date" value={form.validUntil} onChange={(e) => set("validUntil", e.target.value)} />
             </Field>
-            <Field label={t("Verification status")}>
+            <Field label={"Trạng thái xác minh"}>
               <select value={form.verificationStatus} onChange={(e) => set("verificationStatus", e.target.value)}>
-                <option value="UNVERIFIED">{t("UNVERIFIED")}</option>
-                <option value="VERIFIED">{t("VERIFIED")}</option>
-                <option value="REJECTED">{t("REJECTED")}</option>
+                <option value="UNVERIFIED">{"Chưa xác minh"}</option>
+                <option value="VERIFIED">{"Đã xác minh"}</option>
+                <option value="REJECTED">{"Đã từ chối"}</option>
               </select>
             </Field>
           </div>
-          <Field label={t("Source reference")}>
+          <Field label={"Tham chiếu nguồn"}>
             <input value={form.sourceRef} onChange={(e) => set("sourceRef", e.target.value)} required />
           </Field>
           <ErrorBanner error={error} />
@@ -488,24 +517,39 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
 
 function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }) {
   const list = useAsync(() => listDecisions(auth, "").then((all) => all.filter((d) => d.employeeId === employeeId)), [employeeId, auth.username]);
-  const [form, set, reset] = useForm({ decisionRef: "", decisionType: "ACTIVE", effectiveAt: new Date().toISOString().slice(0, 16), reason: "" });
+  const [form, set, reset] = useForm({ decisionRef: "", decisionType: "ACTIVATE", effectiveAt: new Date().toISOString().slice(0, 16), reason: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const canHr = auth.role === "HR_SPECIALIST";
   const canApprove = auth.role === "HR_APPROVER";
+  const [editing, setEditing] = useState<Decision | null>(null);
+  function startEdit(d: Decision) {
+    setEditing(d);
+    set("decisionRef", d.decisionRef);
+    set("decisionType", d.decisionType);
+    set("effectiveAt", d.effectiveAt.slice(0, 16));
+    set("reason", d.reason ?? "");
+    setError(null);
+  }
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await createDecision(auth, employeeId, {
+      const body = {
         decisionRef: form.decisionRef.trim(),
         decisionType: form.decisionType,
         effectiveAt: toInstant(form.effectiveAt),
         reason: form.reason.trim() === "" ? null : form.reason.trim(),
-      });
+      };
+    if (editing) {
+      await updateDecision(auth, editing.id, body);
+      setEditing(null);
+    } else {
+      await createDecision(auth, employeeId, body);
+    }
       reset();
       list.reload();
     } catch (err: unknown) {
@@ -536,8 +580,8 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   }
   return (
     <div>
-      <h3>{t("Status decisions")}</h3>
-      <p className="muted">{t("Status lifecycle: ONBOARDING to ACTIVE, ACTIVE and SUSPENDED, TERMINATED is terminal. A decision takes effect only at its effective time; future decisions are not applied early. The approver must differ from the person who created the decision (four-eyes).")}</p>
+      <h3>{"Quyết định trạng thái"}</h3>
+      <p className="muted">{"Vòng đời trạng thái: ONBOARDING sang ACTIVE, ACTIVE và SUSPENDED, TERMINATED là trạng thái cuối. Quyết định chỉ có hiệu lực vào thời điểm hiệu lực của nó; các quyết định trong tương lai không được áp dụng sớm. Người phê duyệt phải khác người tạo quyết định (bốn mắt)."}</p>
       <div className="row">
         <button className="btn" type="button" onClick={applyDue}>
           Apply due decisions
@@ -545,28 +589,28 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       </div>
       {notice !== null ? <p className="muted">{notice}</p> : null}
       <ErrorBanner error={actionError} />
-      {list.loading ? <p role="status">{t("Loading decisions...")}</p> : null}
+      {list.loading ? <p role="status">{"Đang tải quyết định..."}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No decisions yet.")} /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={"Chưa có quyết định nào."} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Reference")}</th>
-                <th>{t("Type")}</th>
-                <th>{t("Status")}</th>
-                <th>{t("Execution")}</th>
-                <th>{t("Effective at")}</th>
-                <th>{t("Approved by")}</th>
-                <th>{t("Reason")}</th>
-                <th>{t("Created by")}</th>
-                <th>{t("Actions")}</th>
+                <th>{"Tham chiếu"}</th>
+                <th>{"Loại"}</th>
+                <th>{"Trạng thái"}</th>
+                <th>{"Thi hành"}</th>
+                <th>{"Hiệu lực lúc"}</th>
+                <th>{"Người duyệt"}</th>
+                <th>{"Lý do"}</th>
+                <th>{"Người tạo"}</th>
+                <th>{"Thao tác"}</th>
               </tr>
             </thead>
             <tbody>
               {list.data.map((d) => (
-            <tr key={d.id} className={d.decisionStatus === "PENDING" ? "row-attention" : ""}>
+            <tr key={d.id} className={d.decisionStatus === "DRAFT" ? "row-attention" : ""}>
                   <td>{d.decisionRef}</td>
                   <td>{statusLabel(d.decisionType)}</td>
                   <td><Badge tone={toneFor(d.decisionStatus)}>{statusLabel(d.decisionStatus)}</Badge></td>
@@ -576,17 +620,27 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
                   <td>{d.reason}</td>
                   <td>{d.createdBy}</td>
                   <td>
-                    {canApprove && d.decisionStatus === "PENDING" && d.createdBy !== auth.username ? (
+                    {canApprove && d.decisionStatus === "DRAFT" && d.createdBy !== auth.username ? (
                       <button className="btn btn-small" type="button" onClick={() => act(d, "approve")}>
                         Approve
                       </button>
                     ) : null}
-                    {canApprove && (d.decisionStatus === "PENDING" || d.decisionStatus === "APPROVED") && d.createdBy !== auth.username ? (
+                    {canApprove && (d.decisionStatus === "DRAFT" || (d.decisionStatus === "APPROVED" && d.executionStatus === "PENDING")) && d.createdBy !== auth.username ? (
                       <button className="btn btn-small" type="button" onClick={() => act(d, "revoke")}>
                         Revoke
                       </button>
                     ) : null}
-                    {canApprove && d.createdBy === auth.username ? <span className="muted">{t("Four-eyes: you created this decision.")}</span> : null}
+                    {canApprove && d.createdBy === auth.username ? <span className="muted">{"Nguyên tắc bốn mắt: bạn là người tạo quyết định này."}</span> : null}
+      {canHr && d.decisionStatus === "DRAFT" ? (
+        <button className="btn btn-small" type="button" onClick={() => startEdit(d)}>
+          {"Sửa quyết định"}
+        </button>
+      ) : null}
+      {canHr && d.decisionStatus === "DRAFT" ? (
+        <button className="btn btn-small" type="button" onClick={async () => { if (!window.confirm("Xóa quyết định này? Hành động này không thể hoàn tác.")) return; try { await deleteDecision(auth, d.id); list.reload(); } catch (err: unknown) { setActionError(errText(err)); } }}>
+          {"Xóa quyết định"}
+        </button>
+      ) : null}
                   </td>
                 </tr>
               ))}
@@ -596,28 +650,29 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h4>{t("New status decision (HR specialist)")}</h4>
+          <h4>{editing === null ? "Quyết định trạng thái mới (chuyên viên nhân sự)" : "Sửa quyết định"}</h4>
           <div className="row">
-            <Field label={t("Decision reference")}>
+            <Field label={"Số hiệu quyết định"}>
               <input value={form.decisionRef} onChange={(e) => set("decisionRef", e.target.value)} required />
             </Field>
-            <Field label={t("Decision type")}>
+            <Field label={"Loại quyết định"}>
               <select value={form.decisionType} onChange={(e) => set("decisionType", e.target.value)}>
-                <option value="ACTIVE">{t("ACTIVE")}</option>
-                <option value="SUSPENDED">{t("SUSPENDED")}</option>
-                <option value="TERMINATED">{t("TERMINATED")}</option>
-                <option value="ONBOARDING">{t("ONBOARDING")}</option>
+                <option value="ACTIVATE">{"Kích hoạt"}</option>
+                <option value="SUSPEND">{"Tạm đình chỉ"}</option>
+                <option value="RETURN">{"Trở lại làm việc"}</option>
+                <option value="TERMINATE">{"Chấm dứt"}</option>
+                <option value="TRANSFER">{"Điều chuyển"}</option>
               </select>
             </Field>
-            <Field label={t("Effective at (UTC)")}>
+            <Field label={"Hiệu lực lúc (UTC)"}>
               <input type="datetime-local" value={form.effectiveAt} onChange={(e) => set("effectiveAt", e.target.value)} required />
             </Field>
           </div>
-          <Field label={t("Reason")}>
+          <Field label={"Lý do"}>
             <textarea value={form.reason} onChange={(e) => set("reason", e.target.value)} />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label={t("Create decision")} />
+          <SubmitRow busy={busy} label={editing === null ? "Tạo quyết định" : "Lưu quyết định"}  onCancel={editing === null ? undefined : () => { setEditing(null); reset(); }} />
         </form>
       ) : null}
     </div>
@@ -654,23 +709,23 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   }
   return (
     <div>
-      <h3>{t("Transfers and assignments")}</h3>
-      <p className="muted">{t("A transfer closes the current assignment and opens a new one. Overlapping assignments are rejected. Assignment history is never overwritten.")}</p>
-      {assignments.loading ? <p role="status">{t("Loading assignments...")}</p> : null}
+      <h3>{"Chuyển đổi và phân công"}</h3>
+      <p className="muted">{"Một lần chuyển đổi sẽ đóng phân công hiện tại và mở phân công mới. Các phân công trùng thời gian bị từ chối. Lịch sử phân công không bao giờ bị ghi đè."}</p>
+      {assignments.loading ? <p role="status">{"Đang tải phân công..."}</p> : null}
       <ErrorBanner error={assignments.error} />
-      {assignments.data !== null && assignments.data.length === 0 ? <EmptyNote text={t("No assignments yet.")} /> : null}
+      {assignments.data !== null && assignments.data.length === 0 ? <EmptyNote text={"Chưa có phân công nào."} /> : null}
       {assignments.data !== null && assignments.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Assignment")}</th>
-                <th>{t("Department")}</th>
-                <th>{t("Job title")}</th>
-                <th>{t("Role profile")}</th>
-                <th>{t("Start")}</th>
-                <th>{t("End")}</th>
-                <th>{t("Status")}</th>
+                <th>{"Phân công"}</th>
+                <th>{"Phòng ban"}</th>
+                <th>{"Chức danh"}</th>
+                <th>{"Hồ sơ vai trò"}</th>
+                <th>{"Bắt đầu"}</th>
+                <th>{"Kết thúc"}</th>
+                <th>{"Trạng thái"}</th>
               </tr>
             </thead>
             <tbody>
@@ -691,11 +746,11 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h4>{t("New transfer (HR specialist)")}</h4>
+          <h4>{"Chuyển mới (chuyên viên nhân sự)"}</h4>
           <div className="row">
-            <Field label={t("Department")}>
+            <Field label={"Phòng ban"}>
               <select value={form.departmentId} onChange={(e) => set("departmentId", e.target.value)} required>
-                <option value="">{t("Select a department")}</option>
+                <option value="">{"Chọn phòng ban"}</option>
                 {(departments.data ?? []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.displayName} ({d.departmentCode})
@@ -703,12 +758,12 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
                 ))}
               </select>
             </Field>
-            <Field label={t("Job title")}>
+            <Field label={"Chức danh"}>
               <input value={form.jobTitle} onChange={(e) => set("jobTitle", e.target.value)} required />
             </Field>
-            <Field label={t("Role profile (optional)")}>
+            <Field label={"Hồ sơ vai trò (tùy chọn)"}>
               <select value={form.roleProfileId} onChange={(e) => set("roleProfileId", e.target.value)}>
-                <option value="">{t("None")}</option>
+                <option value="">{"Không có"}</option>
                 {(roles.data ?? []).map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.titleName}
@@ -718,15 +773,15 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
             </Field>
           </div>
           <div className="row">
-            <Field label={t("Effective from (UTC)")}>
+            <Field label={"Hiệu lực từ (UTC)"}>
               <input type="datetime-local" value={form.effectiveFrom} onChange={(e) => set("effectiveFrom", e.target.value)} required />
             </Field>
-            <Field label={t("Decision reference (optional)")}>
+            <Field label={"Số hiệu quyết định (tùy chọn)"}>
               <input value={form.decisionRef} onChange={(e) => set("decisionRef", e.target.value)} />
             </Field>
           </div>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label={t("Record transfer")} />
+          <SubmitRow busy={busy} label={"Ghi nhận chuyển đổi"} />
         </form>
       ) : null}
     </div>
@@ -737,21 +792,21 @@ function StatusHistoryPanel({ auth, employeeId }: { auth: Auth; employeeId: stri
   const history = useAsync(() => listStatusHistory(auth, employeeId), [employeeId, auth.username]);
   return (
     <div>
-      <h3>{t("Status history")}</h3>
-      <p className="muted">{t("Every status change is kept here with its effective time and the decision that caused it. Records are never deleted.")}</p>
-      {history.loading ? <p role="status">{t("Loading status history...")}</p> : null}
+      <h3>{"Lịch sử trạng thái"}</h3>
+      <p className="muted">{"Mọi thay đổi trạng thái được lưu tại đây kèm thời điểm hiệu lực và quyết định gây ra thay đổi. Hồ sơ không bao giờ bị xóa."}</p>
+      {history.loading ? <p role="status">{"Đang tải lịch sử trạng thái..."}</p> : null}
       <ErrorBanner error={history.error} />
-      {history.data !== null && history.data.length === 0 ? <EmptyNote text={t("No status history yet.")} /> : null}
+      {history.data !== null && history.data.length === 0 ? <EmptyNote text={"Chưa có lịch sử trạng thái nào."} /> : null}
       {history.data !== null && history.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("From")}</th>
-                <th>{t("To")}</th>
-                <th>{t("Effective at")}</th>
-                <th>{t("Decision")}</th>
-                <th>{t("Recorded at")}</th>
+                <th>{"Từ"}</th>
+                <th>{"Đến"}</th>
+                <th>{"Hiệu lực lúc"}</th>
+                <th>{"Quyết định"}</th>
+                <th>{"Ghi nhận lúc"}</th>
               </tr>
             </thead>
             <tbody>
@@ -827,22 +882,22 @@ function DepartmentList({ auth }: { auth: Auth }) {
   }
   return (
     <section>
-      <h2>{t("Departments")}</h2>
-      <p className="muted">{t("A department must exist and be active before an employee can be assigned to it.")}</p>
-      {list.loading ? <p role="status">{t("Loading departments...")}</p> : null}
+      <h2>{"Phòng ban"}</h2>
+      <p className="muted">{"Phòng ban phải tồn tại và đang hoạt động thì nhân viên mới được phân công về đó."}</p>
+      {list.loading ? <p role="status">{"Đang tải phòng ban..."}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No departments yet.")} /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={"Chưa có phòng ban nào."} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Code")}</th>
-                <th>{t("Name")}</th>
-                <th>{t("Parent")}</th>
-                <th>{t("Type")}</th>
-                <th>{t("Active")}</th>
-                <th>{t("Created by")}</th>
+                <th>{"Mã"}</th>
+                <th>{"Tên"}</th>
+                <th>{"Phòng ban cha"}</th>
+                <th>{"Loại"}</th>
+                <th>{"Đang hoạt động"}</th>
+                <th>{"Người tạo"}</th>
                 <th></th>
               </tr>
             </thead>
@@ -860,7 +915,13 @@ function DepartmentList({ auth }: { auth: Auth }) {
                       <button className="btn btn-small" type="button" onClick={() => startEdit(d)}>
                         Edit
                       </button>
-                    ) : null}
+          
+          ) : null}
+          {canHr ? (
+            <button className="btn btn-small" type="button" onClick={async () => { if (!window.confirm("Xóa phòng ban này? Hành động này không thể hoàn tác.")) return; try { await deleteDepartment(auth, d.id); list.reload(); } catch (err: unknown) { setError(errText(err)); } }}>
+                        {"Xóa"}
+                      </button>
+          ) : null}
                   </td>
                 </tr>
               ))}
@@ -872,24 +933,24 @@ function DepartmentList({ auth }: { auth: Auth }) {
         <form id="department-form" className="card" onSubmit={submit}>
           <h3>{editing === null ? "New department" : "Edit department"}</h3>
           <div className="row">
-            <Field label={t("Department code")}>
+            <Field label={"Mã phòng ban"}>
               <input value={form.departmentCode} onChange={(e) => set("departmentCode", e.target.value)} required />
             </Field>
-            <Field label={t("Display name")}>
+            <Field label={"Tên hiển thị"}>
               <input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} required />
             </Field>
-            <Field label={t("Department type (optional)")}>
+            <Field label={"Loại phòng ban (tùy chọn)"}>
               <input value={form.departmentType} onChange={(e) => set("departmentType", e.target.value)} />
             </Field>
           </div>
           <div className="row">
-            <Field label={t("Parent department ID (optional)")}>
+            <Field label={"ID phòng ban cha (tùy chọn)"}>
               <input value={form.parentDepartmentId} onChange={(e) => set("parentDepartmentId", e.target.value)} />
             </Field>
-            <Field label={t("Active")}>
+            <Field label={"Đang hoạt động"}>
               <select value={form.active} onChange={(e) => set("active", e.target.value)}>
-                <option value="true">{t("Active")}</option>
-                <option value="false">{t("Inactive")}</option>
+                <option value="true">{"Đang hoạt động"}</option>
+                <option value="false">{"Không hoạt động"}</option>
               </select>
             </Field>
           </div>
@@ -907,17 +968,32 @@ function RoleProfileList({ auth }: { auth: Auth }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canHr = auth.role === "HR_SPECIALIST";
+  const [editing, setEditing] = useState<RoleProfile | null>(null);
+  function startEdit(r: RoleProfile) {
+    setEditing(r);
+    set("titleName", r.titleName);
+    set("professionalGroup", r.professionalGroup ?? "");
+    set("qualification", r.qualification ?? "");
+    set("description", r.description ?? "");
+    setError(null);
+  }
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await createRoleProfile(auth, {
+      const body = {
         titleName: form.titleName.trim(),
         professionalGroup: form.professionalGroup.trim() === "" ? null : form.professionalGroup.trim(),
         qualification: form.qualification.trim() === "" ? null : form.qualification.trim(),
         description: form.description.trim() === "" ? null : form.description.trim(),
-      });
+      };
+      if (editing) {
+        await updateRoleProfile(auth, editing.id, body);
+        setEditing(null);
+      } else {
+        await createRoleProfile(auth, body);
+      }
       reset();
       list.reload();
     } catch (err: unknown) {
@@ -928,21 +1004,22 @@ function RoleProfileList({ auth }: { auth: Auth }) {
   }
   return (
     <section>
-      <h2>{t("Role profiles")}</h2>
-      <p className="muted">{t("Role profiles name the professional group and qualification used when an employee is hired or transferred.")}</p>
-      {list.loading ? <p role="status">{t("Loading role profiles...")}</p> : null}
+      <h2>{"Hồ sơ vai trò"}</h2>
+      <p className="muted">{"Hồ sơ vai trò nêu nhóm chuyên môn và trình độ chuyên môn dùng khi nhân viên được tuyển dụng hoặc chuyển đổi."}</p>
+      {list.loading ? <p role="status">{"Đang tải hồ sơ vai trò..."}</p> : null}
       <ErrorBanner error={list.error} />
-      {list.data !== null && list.data.length === 0 ? <EmptyNote text={t("No role profiles yet.")} /> : null}
+      {list.data !== null && list.data.length === 0 ? <EmptyNote text={"Chưa có hồ sơ vai trò nào."} /> : null}
       {list.data !== null && list.data.length > 0 ? (
         <div className="table-wrap">
           <table className="table">
             <thead>
               <tr>
-                <th>{t("Title")}</th>
-                <th>{t("Professional group")}</th>
-                <th>{t("Qualification")}</th>
-                <th>{t("Description")}</th>
-                <th>{t("Created by")}</th>
+                <th>{"Chức danh"}</th>
+                <th>{"Nhóm chuyên môn"}</th>
+                <th>{"Trình độ chuyên môn"}</th>
+                <th>{"Mô tả"}</th>
+                <th>{"Người tạo"}</th>
+        <th>{"Thao tác"}</th>
               </tr>
             </thead>
             <tbody>
@@ -953,6 +1030,18 @@ function RoleProfileList({ auth }: { auth: Auth }) {
                   <td>{r.qualification}</td>
                   <td>{r.description}</td>
                   <td>{r.createdBy}</td>
+      <td>
+        {canHr ? (
+          <button className="btn btn-small" type="button" onClick={() => startEdit(r)}>
+            {"Sửa hồ sơ chức danh"}
+          </button>
+        ) : null}
+        {canHr ? (
+          <button className="btn btn-small" type="button" onClick={async () => { if (!window.confirm("Xóa hồ sơ chức danh này? Hành động này không thể hoàn tác.")) return; try { await deleteRoleProfile(auth, r.id); list.reload(); } catch (err: unknown) { setError(errText(err)); } }}>
+            {"Xóa hồ sơ chức danh"}
+          </button>
+        ) : null}
+      </td>
                 </tr>
               ))}
             </tbody>
@@ -961,23 +1050,23 @@ function RoleProfileList({ auth }: { auth: Auth }) {
       ) : null}
       {canHr ? (
         <form className="card" onSubmit={submit}>
-          <h3>{t("New role profile")}</h3>
-          <Field label={t("Title name")}>
+          <h3>{"Hồ sơ vai trò mới"}</h3>
+          <Field label={"Tên chức danh"}>
             <input value={form.titleName} onChange={(e) => set("titleName", e.target.value)} required />
           </Field>
           <div className="row">
-            <Field label={t("Professional group (optional)")}>
+            <Field label={"Nhóm chuyên môn (tùy chọn)"}>
               <input value={form.professionalGroup} onChange={(e) => set("professionalGroup", e.target.value)} />
             </Field>
-            <Field label={t("Qualification (optional)")}>
+            <Field label={"Trình độ chuyên môn (tùy chọn)"}>
               <input value={form.qualification} onChange={(e) => set("qualification", e.target.value)} />
             </Field>
           </div>
-          <Field label={t("Description (optional)")}>
+          <Field label={"Mô tả (tùy chọn)"}>
             <textarea value={form.description} onChange={(e) => set("description", e.target.value)} />
           </Field>
           <ErrorBanner error={error} />
-          <SubmitRow busy={busy} label={t("Create role profile")} />
+          <SubmitRow busy={busy} label={editing === null ? "Tạo hồ sơ vai trò" : "Lưu hồ sơ chức danh"}  onCancel={editing === null ? undefined : () => { setEditing(null); reset(); }} />
         </form>
       ) : null}
     </section>

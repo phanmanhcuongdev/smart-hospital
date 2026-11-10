@@ -23,9 +23,6 @@ function stubFetch() {
       if (u.includes("/api/v1/hr/departments")) {
         return auth === HR_AUTH ? body(200, []) : body(403, { code: "FORBIDDEN", message: "Forbidden" });
       }
-      if (u.includes("/api/v1/emr/encounters")) {
-        return body(200, []);
-      }
       if (u.includes("/api/v1/hr/employees")) {
         return body(200, []);
       }
@@ -35,16 +32,6 @@ function stubFetch() {
 }
 
 describe("App", () => {
-  it("shows the demo login, signs in a doctor, and lists encounters", async () => {
-    stubFetch();
-    sessionStorage.clear();
-    render(<App />);
-    expect(screen.getByText("Đăng nhập (demo)")).toBeInTheDocument();
-    expect(await screen.findByText("Trạng thái backend: UP")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
-    expect(await screen.findByText("Lượt khám (SCR-EMR-01)")).toBeInTheDocument();
-    expect(await screen.findByText("Chưa có lượt khám nào.")).toBeInTheDocument();
-  });
 
   it("signs in an HR user and shows the employee list", async () => {
     stubFetch();

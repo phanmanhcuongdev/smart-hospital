@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { LanguageSwitcher, currentLocale, greetingFor, shiftFor, statusLabel, t, tf } from "../../lib/i18n";
+import { greetingFor, shiftFor, statusLabel } from "../../lib/labels";
 import type { ReactNode } from "react";
-import type { Auth, Department, Employee, Encounter } from "../../lib/api";
-import { listDepartments, listEncounters, searchEmployees } from "../../lib/api";
-import { isClinical, isHr } from "../../auth/auth";
+import type { Auth, Department, Employee } from "../../lib/api";
+import { listDepartments, searchEmployees } from "../../lib/api";
+import { isHr } from "../../auth/auth";
 
 export interface SearchHit {
-  kind: "Encounter" | "Employee" | "Department";
+  kind: "Employee" | "Department";
   id: string;
   title: string;
   detail: string;
@@ -84,21 +84,13 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
             }
           }
         }
-        if (isClinical(auth.role)) {
-          const encounters = toArray<Encounter>(await listEncounters(auth));
-          for (const e of encounters) {
-            if (matches(e.patientId, q) || matches(e.id, q) || matches(e.status, q)) {
-              found.push({ kind: "Encounter", id: e.id, title: "Encounter " + e.id.slice(0, 8), detail: "Patient " + e.patientId.slice(0, 8) + " - " + e.status });
-            }
-          }
-        }
         if (cancelled === false) {
           setHits(found.slice(0, 8));
           setSelected(0);
           setError("");
         }
       } catch (err) {
-        if (cancelled === false) setError(err instanceof Error ? err.message : t("Search failed"));
+        if (cancelled === false) setError(err instanceof Error ? err.message : "Tìm kiếm thất bại");
       } finally {
         if (cancelled === false) setLoading(false);
       }
@@ -112,17 +104,17 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
 
   return (
     <div className="palette-overlay" role="presentation" onClick={onClose}>
-      <div className="palette" role="dialog" aria-modal="true" aria-label={t("Global search")} onClick={(e) => e.stopPropagation()}>
-        <input ref={inputRef} className="palette-input" type="search" placeholder={t("Search patients, employees, departments")} aria-label={t("Search patients, employees, departments")} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
-        {loading && <p className="palette-hint">{t("Searching real records")}</p>}
+      <div className="palette" role="dialog" aria-modal="true" aria-label={"Tìm kiếm toàn cục"} onClick={(e) => e.stopPropagation()}>
+        <input ref={inputRef} className="palette-input" type="search" placeholder={"Tìm kiếm nhân viên, phòng ban"} aria-label={"Tìm kiếm nhân viên, phòng ban"} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
+        {loading && <p className="palette-hint">{"Đang tìm trong hồ sơ thực."}</p>}
         {error !== "" && <p className="palette-hint" role="alert">{error}</p>}
-        {query.trim().length >= 2 && loading === false && hits.length === 0 && error === "" && (<p className="palette-hint">{t("No matches in the records you can access.")}</p>)}
-        {query.trim().length < 2 && (<p className="palette-hint">{t("Type at least 2 characters. Encounters are matched by patient and encounter ID; employees by name or code; departments by name or code.")}</p>)}
+        {query.trim().length >= 2 && loading === false && hits.length === 0 && error === "" && (<p className="palette-hint">{"Không có kết quả nào trong các hồ sơ bạn có thể xem."}</p>)}
+        {query.trim().length < 2 && (<p className="palette-hint">{"Nhập ít nhất 2 ký tự. Nhân viên được tìm theo tên hoặc mã; phòng ban theo tên hoặc mã."}</p>)}
         <ul className="palette-list">
           {hits.map((hit, index) => (
             <li key={hit.kind + "-" + hit.id}>
               <button type="button" className={"palette-item" + (index === selected ? " selected" : "")} onClick={() => openHit(hit)} onMouseEnter={() => setSelected(index)}>
-                <span className="palette-kind">{hit.kind === "Encounter" ? t("Encounter") : hit.kind === "Employee" ? t("Employee") : t("Department")}</span>
+                <span className="palette-kind">{hit.kind === "Employee" ? "Nhân viên" : "Phòng ban"}</span>
                 <span><strong>{hit.title}</strong><br /><span className="muted">{hit.detail}</span></span>
               </button>
             </li>
@@ -156,22 +148,22 @@ export function AppShell({ auth, nav, bottomNav, pendingDecisions, onOpenPending
 
   const groups: string[] = [];
   for (const entry of nav) { if (groups.includes(entry.group) === false) groups.push(entry.group); }
-  const clock = now.toLocaleTimeString(currentLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateLine = now.toLocaleDateString(currentLocale(), { weekday: "long", day: "numeric", month: "long" });
+  const clock = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dateLine = now.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <div className="app-shell">
-      <aside className={"sidebar" + (sidebarOpen ? " open" : "")} aria-label={t("Primary navigation")}>
+      <aside className={"sidebar" + (sidebarOpen ? " open" : "")} aria-label={"Điều hướng chính"}>
         <div className="sidebar-brand">
           <span className="sidebar-brand-mark" aria-hidden="true">+</span>
-          <span><span className="sidebar-brand-name">{t("SmartHMS")}</span><br /><span className="sidebar-brand-sub">{t("Hospital Management")}</span></span>
+          <span><span className="sidebar-brand-name">{"SmartHMS"}</span><br /><span className="sidebar-brand-sub">{"Quản lý bệnh viện"}</span></span>
         </div>
         <div className="sidebar-status">
           <span className="status-dot" aria-hidden="true"></span>
-          <span>{t("On duty")} - {shiftFor(now)}</span>
+          <span>{"Đang trực"} - {shiftFor(now)}</span>
           <span className="sidebar-clock">{clock}</span>
         </div>
-        <nav className="sidebar-nav" aria-label={t("Sections")}>
+        <nav className="sidebar-nav" aria-label={"Mục"}>
           {groups.map((group) => (
             <div className="nav-group" key={group}>
               <div className="nav-group-label">{group}</div>
@@ -193,30 +185,29 @@ export function AppShell({ auth, nav, bottomNav, pendingDecisions, onOpenPending
           <div className="sidebar-user-row2">
             <span>{auth.username}</span>
             <span className="status-dot" aria-hidden="true"></span>
-            <span>{t("On duty")}</span>
-        <button type="button" className="sidebar-user-signout" onClick={onSignOut}>{t("Sign out")}</button>
+            <span>{"Đang trực"}</span>
+        <button type="button" className="sidebar-user-signout" onClick={onSignOut}>{"Đăng xuất"}</button>
           </div>
         </div>
       </aside>
       <div className="app-main">
         <header className="topbar">
-          <button type="button" className="icon-btn menu-btn" aria-label={t("Open navigation")} onClick={() => setSidebarOpen(true)}>&#9776;</button>
+          <button type="button" className="icon-btn menu-btn" aria-label={"Mở điều hướng"} onClick={() => setSidebarOpen(true)}>&#9776;</button>
       <div className="topbar-text">
             <p className="topbar-greeting">{greetingFor(now)}, {statusLabel(auth.role)}</p>
             <p className="topbar-sub">{dateLine} - {shiftFor(now)}</p>
           </div>
           <div className="topbar-spacer"></div>
-    <LanguageSwitcher />
-          <button type="button" className="search-trigger" onClick={() => setPaletteOpen(true)} aria-label={t("Search records")}><span aria-hidden="true">&#128269;</span><span className="search-label">{t("Search records")}</span><kbd>{t("Ctrl K")}</kbd></button>
+          <button type="button" className="search-trigger" onClick={() => setPaletteOpen(true)} aria-label={"Tìm kiếm hồ sơ"}><span aria-hidden="true">&#128269;</span><span className="search-label">{"Tìm kiếm hồ sơ"}</span><kbd>{"Ctrl K"}</kbd></button>
           {isHr(auth.role) && (
-            <button type="button" className="icon-btn" aria-label={pendingDecisions > 0 ? tf("Notifications, {n} pending decisions", { n: pendingDecisions }) : t("Notifications")} onClick={onOpenPendingDecisions}>
+            <button type="button" className="icon-btn" aria-label={pendingDecisions > 0 ? `Thông báo, ${pendingDecisions} quyết định chờ duyệt` : "Thông báo"} onClick={onOpenPendingDecisions}>
               <span aria-hidden="true">&#128276;</span>
               {pendingDecisions > 0 && (<span className="icon-btn-badge">{pendingDecisions}</span>)}
             </button>
           )}
         </header>
         <div className="content">{children}</div>
-        <nav className="bottom-nav" aria-label={t("Mobile navigation")}>
+        <nav className="bottom-nav" aria-label={"Điều hướng di động"}>
           {bottomNav.map((entry) => (
             <button key={entry.id} type="button" className={"bottom-nav-item" + (entry.active ? " active" : "")} aria-current={entry.active ? "page" : undefined} onClick={entry.onSelect}>
               <span className="bottom-nav-icon" aria-hidden="true">{entry.icon}</span>
