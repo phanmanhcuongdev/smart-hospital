@@ -30,11 +30,6 @@ public class SecurityConfiguration {
         }
         String encoded = passwordEncoder.encode(password);
         InMemoryUserDetailsManager users = new InMemoryUserDetailsManager();
-        users.createUser(User.withUsername("EMP-DEMO-001").password(encoded).roles("DOCTOR").build());
-        users.createUser(User.withUsername("demo-nurse").password(encoded).roles("NURSE").build());
-        users.createUser(User.withUsername("demo-cls").password(encoded).roles("CLS_TECHNICIAN").build());
-        users.createUser(User.withUsername("demo-records").password(encoded).roles("RECORDS_MANAGER").build());
-        users.createUser(User.withUsername("demo-reception").password(encoded).roles("RECEPTION").build());
         users.createUser(User.withUsername("demo-hr").password(encoded).roles("HR_SPECIALIST").build());
         users.createUser(User.withUsername("demo-hr-approver").password(encoded).roles("HR_APPROVER").build());
         return users;
@@ -51,7 +46,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health", "/api/v1/system/health").permitAll()
-                        .requestMatchers("/api/v1/emr/**", "/api/v1/hr/**").authenticated()
+                        .requestMatchers("/api/v1/hr/**").authenticated()
                         .anyRequest().denyAll())
                 .httpBasic(httpBasic -> { })
                 .formLogin(AbstractHttpConfigurer::disable);
