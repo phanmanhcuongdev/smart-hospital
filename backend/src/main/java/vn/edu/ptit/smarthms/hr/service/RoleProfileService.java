@@ -9,9 +9,11 @@ import vn.edu.ptit.smarthms.common.error.ConflictException;
 import vn.edu.ptit.smarthms.common.error.NotFoundException;
 import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.hr.api.HrRequests.CreateRoleProfileRequest;
+import vn.edu.ptit.smarthms.hr.api.HrRequests.UpdateRoleProfileRequest;
 import vn.edu.ptit.smarthms.hr.api.HrResponses.RoleProfileResponse;
 import vn.edu.ptit.smarthms.hr.domain.RoleProfile;
 import vn.edu.ptit.smarthms.hr.domain.RoleProfileRepository;
+import vn.edu.ptit.smarthms.hr.domain.EmploymentRepository;
 
 /** Role profiles (FR-HR-01, FR-HR-04). A title is never a system role (BR-015). */
 @Service
@@ -19,8 +21,10 @@ import vn.edu.ptit.smarthms.hr.domain.RoleProfileRepository;
 public class RoleProfileService {
 
     private final RoleProfileRepository roleProfiles;
+  private final EmploymentRepository employments;
 
-    public RoleProfileService(RoleProfileRepository roleProfiles) {
+    public RoleProfileService(RoleProfileRepository roleProfiles, EmploymentRepository employments) {
+    this.employments = employments;
         this.roleProfiles = roleProfiles;
     }
 
@@ -38,7 +42,30 @@ public class RoleProfileService {
         return RoleProfileResponse.from(roleProfiles.save(roleProfile));
     }
 
-    public RoleProfileResponse getRoleProfile(Actor actor, UUID roleProfileId) {
+    public RoleProfileResponse updateRoleProfile(Actor actor, UUID roleProfileId, UpdateRoleProfileRequest request) {
+    actor.requireRole("HR_SPECIALIST");
+    RoleProfile profile = requireRoleProfile(roleProfileId);
+    if (request.titleName() != null && !request.titleName().equals(profile.getTitleName())
+        && roleProfiles.existsByTitleName(request.titleName())) {
+      throw new ConflictException("A role profile with this title already exists.");
+    }
+    if (request.titleName() != null) profile.setTitleName(request.titleName());
+    if (request.professionalGroup() != null) profile.setProfessionalGroup(request.professionalGroup());
+    if (request.qualification() != null) profile.setQualification(request.qualification());
+    if (request.description() != null) profile.setDescription(request.description());
+    return RoleProfileResponse.from(roleProfiles.save(profile));
+  }
+
+  public void deleteRoleProfile(Actor actor, UUID roleProfileId) {
+    actor.requireRole("HR_SPECIALIST");
+    RoleProfile profile = requireRoleProfile(roleProfileId);
+    if (employments.findAll().stream().anyMatch(e -> roleProfileId.equals(e.getRoleProfileId()))) {
+      throw new ConflictException("Cannot delete role profile: it is still used by employee assignments.");
+    }
+    roleProfiles.delete(profile);
+  }
+
+  public RoleProfileResponse getRoleProfile(Actor actor, UUID roleProfileId) {
         actor.requireAnyRole("HR_SPECIALIST", "HR_APPROVER");
         return RoleProfileResponse.from(requireRoleProfile(roleProfileId));
     }

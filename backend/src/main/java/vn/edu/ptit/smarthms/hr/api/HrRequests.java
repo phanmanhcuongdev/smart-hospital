@@ -94,4 +94,8 @@ public final class HrRequests {
             @NotNull Instant effectiveFrom,
             String decisionRef) {
     }
+  public record UpdateDecisionRequest(String decisionRef, String decisionType, Instant effectiveAt, String reason) {}
+
+  public record UpdateRoleProfileRequest(String titleName, String professionalGroup, String qualification, String description) {}
+
 }

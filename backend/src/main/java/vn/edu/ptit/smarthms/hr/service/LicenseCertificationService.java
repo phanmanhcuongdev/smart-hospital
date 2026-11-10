@@ -88,7 +88,13 @@ public class LicenseCertificationService {
         return CertificationResponse.from(saved, computeValidity(saved, LocalDate.now()));
     }
 
-    public CertificationResponse getCertification(Actor actor, UUID certificationId) {
+    public void deleteCertification(Actor actor, UUID certificationId) {
+    actor.requireRole("HR_SPECIALIST");
+    LicenseCertification certification = requireCertification(certificationId);
+    certifications.delete(certification);
+  }
+
+  public CertificationResponse getCertification(Actor actor, UUID certificationId) {
         actor.requireAnyRole("HR_SPECIALIST", "HR_APPROVER");
         LicenseCertification certification = requireCertification(certificationId);
         return CertificationResponse.from(certification, computeValidity(certification, LocalDate.now()));

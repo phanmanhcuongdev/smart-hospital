@@ -1,5 +1,6 @@
 package vn.edu.ptit.smarthms.hr.service;
 
+import vn.edu.ptit.smarthms.hr.domain.EmploymentRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,8 +21,10 @@ import vn.edu.ptit.smarthms.hr.domain.DepartmentRepository;
 public class DepartmentService {
 
     private final DepartmentRepository departments;
+  private final EmploymentRepository employments;
 
-    public DepartmentService(DepartmentRepository departments) {
+    public DepartmentService(DepartmentRepository departments, EmploymentRepository employments) {
+    this.employments = employments;
         this.departments = departments;
     }
 
@@ -68,7 +71,19 @@ public class DepartmentService {
         return DepartmentResponse.from(departments.save(department));
     }
 
-    public DepartmentResponse getDepartment(Actor actor, UUID departmentId) {
+    public void deleteDepartment(Actor actor, UUID departmentId) {
+    actor.requireRole("HR_SPECIALIST");
+    Department department = requireDepartment(departmentId);
+    if (!employments.findByDepartmentId(departmentId).isEmpty()) {
+      throw new ConflictException("Cannot delete department: it still has employees assigned.");
+    }
+    if (departments.findAll().stream().anyMatch(d -> departmentId.equals(d.getParentDepartmentId()))) {
+      throw new ConflictException("Cannot delete department: it still has sub-departments.");
+    }
+    departments.delete(department);
+  }
+
+  public DepartmentResponse getDepartment(Actor actor, UUID departmentId) {
         actor.requireAnyRole("HR_SPECIALIST", "HR_APPROVER");
         return DepartmentResponse.from(requireDepartment(departmentId));
     }

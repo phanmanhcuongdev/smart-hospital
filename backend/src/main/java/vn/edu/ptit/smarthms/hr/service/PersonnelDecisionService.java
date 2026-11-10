@@ -12,6 +12,7 @@ import vn.edu.ptit.smarthms.common.error.NotFoundException;
 import vn.edu.ptit.smarthms.common.error.ValidationException;
 import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.hr.api.HrRequests.CreateDecisionRequest;
+import vn.edu.ptit.smarthms.hr.api.HrRequests.UpdateDecisionRequest;
 import vn.edu.ptit.smarthms.hr.api.HrResponses.DecisionResponse;
 import vn.edu.ptit.smarthms.hr.domain.Employee;
 import vn.edu.ptit.smarthms.hr.domain.EmployeeRepository;
@@ -76,7 +77,36 @@ public class PersonnelDecisionService {
         return DecisionResponse.from(saved);
     }
 
-    public DecisionResponse getDecision(Actor actor, UUID decisionId) {
+    public DecisionResponse updateDecision(Actor actor, UUID decisionId, UpdateDecisionRequest request) {
+    actor.requireRole("HR_SPECIALIST");
+    PersonnelDecision decision = requireDecision(decisionId);
+    if (decision.getDecisionStatus() != PersonnelDecision.DecisionStatus.DRAFT) {
+      throw new ConflictException("Only a DRAFT decision can be edited.");
+    }
+    if (request.decisionRef() != null && !request.decisionRef().equals(decision.getDecisionRef())
+        && decisions.existsByDecisionRef(request.decisionRef())) {
+      throw new ConflictException("Decision reference already exists.");
+    }
+    if (request.decisionRef() != null) decision.setDecisionRef(request.decisionRef());
+    if (request.decisionType() != null) decision.setDecisionType(PersonnelDecision.DecisionType.valueOf(request.decisionType()));
+    if (request.effectiveAt() != null) decision.setEffectiveAt(request.effectiveAt());
+    if (request.reason() != null) decision.setReason(request.reason());
+    return DecisionResponse.from(decisions.save(decision));
+  }
+
+  public void deleteDecision(Actor actor, UUID decisionId) {
+    actor.requireRole("HR_SPECIALIST");
+    PersonnelDecision decision = requireDecision(decisionId);
+    if (decision.getDecisionStatus() != PersonnelDecision.DecisionStatus.DRAFT) {
+      throw new ConflictException("Only a DRAFT decision can be deleted.");
+    }
+    if (decision.getExecutionStatus() != PersonnelDecision.ExecutionStatus.PENDING) {
+      throw new ConflictException("Only a decision that has not been applied can be deleted.");
+    }
+    decisions.delete(decision);
+  }
+
+  public DecisionResponse getDecision(Actor actor, UUID decisionId) {
         actor.requireAnyRole("HR_SPECIALIST", "HR_APPROVER");
         return DecisionResponse.from(requireDecision(decisionId));
     }

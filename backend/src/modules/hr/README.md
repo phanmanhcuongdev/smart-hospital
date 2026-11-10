@@ -13,7 +13,7 @@ FR-HR-01 to FR-HR-04 are implemented under backend/src/main/java/vn/edu/ptit/sma
 - FR-HR-03 Status decisions: states ONBOARDING, ACTIVE, SUSPENDED, TERMINATED (terminal). Approval is four-eyes: the approver must differ from the requester. A future decision is not applied early. On the TERMINATED effective date the service writes an EMPLOYEE_TERMINATED event to hr.integration_outbox for SYS to revoke the account and session; the record and its history are kept, never deleted. Affected future shifts are not listed because the Scheduling module is not implemented. PersonnelDecisionService.
 - FR-HR-04 Transfers: a transfer closes the old assignment and opens the new one; overlapping assignments are rejected; an employee has no two active assignments; history is never overwritten. A transfer does not grant rights in the new unit. A TRANSFER decision is marked APPLIED only when the transfer is recorded. EmploymentService.
 
-Endpoints live under /api/v1/hr/ and require authentication (HTTP Basic demo users, see the backend README). HR publishes practitioner facts to EMR through PractitionerPort (HrPractitionerAdapter): employee id by code, active status, and CCHN validity.
+Endpoints live under /api/v1/hr/ and require authentication (HTTP Basic demo users, see the backend README). The EMR module and its practitioner integration were removed; HR no longer publishes practitioner facts to other modules.
 
 ## Spec-to-schema notes
 
