@@ -1,5 +1,6 @@
 import type {
   Addendum,
+  ClinicalResult,
   Diagnosis,
   Encounter,
   EncounterStatus,
@@ -14,7 +15,9 @@ import type {
   PractitionerSummary,
   Prescription,
   RecordVersion,
+  ResultIngest,
   UserSummary,
+  PrescriptionLineInput,
 } from "./types";
 
 const base: string = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -191,9 +194,10 @@ export const emrApi = {
     return request<Prescription[]>(`/encounters/${encounterId}/prescriptions`);
   },
 
-  createPrescription(encounterId: string) {
+  createPrescription(encounterId: string, items: PrescriptionLineInput[]) {
     return request<Prescription>(`/encounters/${encounterId}/prescriptions`, {
       method: "POST",
+      body: JSON.stringify({ items }),
     });
   },
 
@@ -253,38 +257,8 @@ export const emrApi = {
     );
   },
 
-  createVersion(encounterId: string) {
-    return request<RecordVersion>(
-      `/encounters/${encounterId}/record/versions`,
-      { method: "POST" },
-    );
-  },
-
-  submitRecord(encounterId: string) {
-    return request<MedicalRecord>(`/encounters/${encounterId}/record/submit`, {
-      method: "POST",
-    });
-  },
-
-  lockRecord(encounterId: string, userId: string) {
-    return request<MedicalRecord>(`/encounters/${encounterId}/record/lock`, {
-      method: "POST",
-      body: JSON.stringify({ userId }),
-    });
-  },
-
   listAddenda(encounterId: string) {
     return request<Addendum[]>(`/encounters/${encounterId}/record/addenda`);
-  },
-
-  createAddendum(
-    encounterId: string,
-    body: { reason: string; content: string },
-  ) {
-    return request<Addendum>(`/encounters/${encounterId}/record/addenda`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
   },
 
   confirmAddendum(encounterId: string, addendumId: string, userId: string) {
@@ -295,5 +269,67 @@ export const emrApi = {
         body: JSON.stringify({ userId }),
       },
     );
+  },
+
+  listResults(orderId: string) {
+    return request<ClinicalResult[]>(`/orders/${orderId}/results`);
+  },
+
+  submitMockResult(
+    orderId: string,
+    body: {
+      sourceSystem: string;
+      sourceResultId: string;
+      sourceVersion: string;
+      patientId: string;
+      payload: string;
+      abnormalFlag?: boolean;
+    },
+  ) {
+    return request<ResultIngest>(`/orders/${orderId}/results`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  createVersion(encounterId: string, expectedVersion: number) {
+    return request<RecordVersion>(
+      `/encounters/${encounterId}/record/versions`,
+      {
+        method: "POST",
+        body: JSON.stringify({ expectedVersion }),
+      },
+    );
+  },
+
+  submitRecord(encounterId: string, expectedVersion: number) {
+    return request<MedicalRecord>(`/encounters/${encounterId}/record/submit`, {
+      method: "POST",
+      body: JSON.stringify({ expectedVersion }),
+    });
+  },
+
+  returnRecord(encounterId: string, expectedVersion: number) {
+    return request<MedicalRecord>(`/encounters/${encounterId}/record/return`, {
+      method: "POST",
+      body: JSON.stringify({ expectedVersion }),
+    });
+  },
+
+  lockRecord(encounterId: string, userId: string, expectedVersion: number) {
+    return request<MedicalRecord>(`/encounters/${encounterId}/record/lock`, {
+      method: "POST",
+      body: JSON.stringify({ userId, expectedVersion }),
+    });
+  },
+
+  createAddendum(
+    encounterId: string,
+    body: { reason: string; content: string; expectedVersion: number },
+  ) {
+    return request<Addendum>(`/encounters/${encounterId}/record/addenda`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   },
 };

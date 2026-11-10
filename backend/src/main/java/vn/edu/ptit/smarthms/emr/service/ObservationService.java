@@ -18,9 +18,8 @@ import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 @Service
 public class ObservationService {
     private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
-    /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
-    private static final Set<EncounterStatus> CAN_RECORD = Set.of(
-            EncounterStatus.WAITING, EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD);
+    /** IV7 M-02: chỉ ghi khi lần khám đang IN_PROGRESS. */
+    private static final Set<EncounterStatus> CAN_RECORD = Set.of(EncounterStatus.IN_PROGRESS);
 
     private final ClinicalObservationRepository observations;
     private final MedicalEncounterRepository encounters;
@@ -47,9 +46,17 @@ public class ObservationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Provide exactly one of numericValue or textValue");
         }
+        String unit = unitCode == null || unitCode.isBlank() ? null : unitCode.trim();
+        if (hasNumber && unit == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "unitCode is required for a numeric observation");
+        }
+        OffsetDateTime when = observedAt != null ? observedAt : OffsetDateTime.now();
+        if (when.isAfter(OffsetDateTime.now().plusMinutes(5))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "observedAt cannot be in the future");
+        }
         return observations.save(ClinicalObservation.create(
-                encounterId, metricCode.trim(), numericValue, hasText ? textValue : null, unitCode,
-                observedAt != null ? observedAt : OffsetDateTime.now(),
+                encounterId, metricCode.trim(), numericValue, hasText ? textValue : null, unit, when,
                 sourceType != null ? sourceType : ClinicalObservation.SourceType.MANUAL,
                 sourceRef != null && !sourceRef.isBlank() ? sourceRef : "manual-entry",
                 quality != null ? quality : ClinicalObservation.Quality.VALID,

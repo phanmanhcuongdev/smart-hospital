@@ -21,9 +21,22 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
     }
 
     @Override
+    public Optional<String> patientIdentityStatus(UUID id) {
+        return jdbc.query("select identity_status from ref.patient_fixture where patient_id = ?",
+                (rs, n) -> rs.getString(1), id).stream().findFirst();
+    }
+
+    @Override
     public boolean practitionerExists(UUID id) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
                 "select exists(select 1 from hr.employee where employee_id = ?)", Boolean.class, id));
+    }
+
+    @Override
+    public boolean practitionerActive(UUID id) {
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from hr.employee where employee_id = ? and status = 'ACTIVE')",
+                Boolean.class, id));
     }
 
     @Override
@@ -52,7 +65,8 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                         rs.getString("display_name"), rs.getString("identity_status")),
                 "%" + escaped + "%");
     }
-        @Override
+
+    @Override
     public List<PractitionerSummary> listPractitioners() {
         return jdbc.query("""
                 select employee_id, employee_code, full_name
@@ -63,7 +77,7 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                         rs.getString("employee_code"), rs.getString("full_name")));
     }
 
-        @Override
+    @Override
     public List<MedicationSummary> listMedications() {
         return jdbc.query("""
                 select medication_id, display_name
@@ -74,7 +88,8 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                 """, (rs, n) -> new MedicationSummary(rs.getObject("medication_id", UUID.class),
                         rs.getString("display_name")));
     }
-        @Override
+
+    @Override
     public List<UserSummary> listUsers() {
         return jdbc.query("""
                 select user_id, username
@@ -84,5 +99,11 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                 limit 100
                 """, (rs, n) -> new UserSummary(rs.getObject("user_id", UUID.class),
                         rs.getString("username")));
+    }
+
+    @Override
+    public List<AllergyFact> allergiesOf(UUID patientId) {
+        return jdbc.query("select allergy_status, allergen from ref.allergy_fixture where patient_id = ?",
+                (rs, n) -> new AllergyFact(rs.getString(1), rs.getString(2)), patientId);
     }
 }

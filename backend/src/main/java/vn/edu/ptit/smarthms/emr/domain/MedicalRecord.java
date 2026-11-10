@@ -61,6 +61,15 @@ public class MedicalRecord {
         this.updatedBy = actor;
     }
 
+        public void returnToDraft(String actor) {
+        this.recordStatus = RecordStatus.DRAFT;
+        this.rowVersion++;
+        this.updatedAt = OffsetDateTime.now();
+        this.updatedBy = actor;
+    }
+
+    public int getRowVersion() { return rowVersion; }
+
     public UUID getLockedBy() { return lockedBy; }
     public UUID getRecordId() { return recordId; }
     public UUID getEncounterId() { return encounterId; }

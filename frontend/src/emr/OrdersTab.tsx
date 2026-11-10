@@ -12,6 +12,7 @@ import type {
   OrderStatus,
   OrderType,
 } from "./types";
+import { ResultsPanel } from "./ResultsPanel";
 
 const CAN_ORDER: EncounterStatus[] = ["IN_PROGRESS", "PENDING_LAB_RAD"];
 const ORDER_TYPES = Object.keys(ORDER_TYPE_LABEL) as OrderType[];
@@ -135,12 +136,22 @@ export function OrdersTab({
               <th>Mã ngoài</th>
               <th>Chỉ định lúc</th>
               <th>Chuyển trạng thái</th>
+              <th>Kết quả</th>
             </tr>
           </thead>
           <tbody>
             {items.map((o) => (
               <tr key={o.orderId}>
-                <td>{ORDER_TYPE_LABEL[o.orderType]}</td>
+                <td>
+                  {ORDER_TYPE_LABEL[o.orderType]}{" "}
+                  <td>
+                    <ResultsPanel
+                      encounterId={encounterId}
+                      orderId={o.orderId}
+                      orderStatus={o.orderStatus}
+                    />
+                  </td>
+                </td>
                 <td>
                   <span className="badge">
                     {ORDER_STATUS_LABEL[o.orderStatus]}

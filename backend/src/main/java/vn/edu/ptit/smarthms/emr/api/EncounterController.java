@@ -30,9 +30,4 @@ public class EncounterController {
                                           @Valid @RequestBody UpdateStatusRequest req) {
         return EncounterResponse.from(service.changeStatus(id, req.status()));
     }
-
-    @GetMapping("/{id}/record")
-    public RecordResponse getRecord(@PathVariable UUID id) {
-        return RecordResponse.from(service.getRecord(id));
-    }
 }

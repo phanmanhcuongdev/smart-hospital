@@ -20,7 +20,7 @@ import vn.edu.ptit.smarthms.emr.service.PrescriptionService;
 @RestController
 @RequestMapping("/api/v1/emr/encounters/{encounterId}/prescriptions")
 public class PrescriptionController {
-    public record AddItemRequest(
+    public record ItemRequest(
             @NotNull UUID medicationId,
             @NotBlank @Size(max = 100) String dose,
             @NotBlank @Size(max = 80) String route,
@@ -29,6 +29,11 @@ public class PrescriptionController {
             @NotNull @DecimalMin(value = "0", inclusive = false) @Digits(integer = 11, fraction = 3)
             BigDecimal quantity,
             @NotBlank @Size(max = 40) String unitCode) {}
+
+    /** IV.4 API-03: tối thiểu 1 dòng thuốc; catalogVersion chưa được dùng để kiểm tra (fixture). */
+    public record CreateRequest(
+            @NotNull @Size(min = 1, max = 50) List<@Valid ItemRequest> items,
+            @Size(max = 60) String catalogVersion) {}
 
     public record ItemResponse(int lineNo, UUID medicationId, String medicationLabel, String dose,
                                String route, String frequency, int daysCount, BigDecimal quantity,
@@ -40,8 +45,11 @@ public class PrescriptionController {
         }
     }
 
+    public record WarningResponse(String code, String message) {}
+
     public record PrescriptionResponse(UUID prescriptionId, UUID encounterId, UUID prescriberId,
-                                       String status, OffsetDateTime issuedAt, List<ItemResponse> items) {}
+                                       String status, OffsetDateTime issuedAt, List<ItemResponse> items,
+                                       List<WarningResponse> warnings) {}
 
     private final PrescriptionService service;
 
@@ -49,8 +57,12 @@ public class PrescriptionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PrescriptionResponse create(@PathVariable UUID encounterId) {
-        return view(service.create(encounterId));
+    public PrescriptionResponse create(@PathVariable UUID encounterId, @Valid @RequestBody CreateRequest r) {
+        List<PrescriptionService.ItemInput> inputs = r.items().stream()
+                .map(i -> new PrescriptionService.ItemInput(i.medicationId(), i.dose(), i.route(),
+                        i.frequency(), i.daysCount(), i.quantity(), i.unitCode()))
+                .toList();
+        return view(service.create(encounterId, inputs));
     }
 
     @GetMapping
@@ -66,7 +78,7 @@ public class PrescriptionController {
     @PostMapping("/{prescriptionId}/items")
     @ResponseStatus(HttpStatus.CREATED)
     public PrescriptionResponse addItem(@PathVariable UUID encounterId, @PathVariable UUID prescriptionId,
-                                        @Valid @RequestBody AddItemRequest r) {
+                                        @Valid @RequestBody ItemRequest r) {
         return view(service.addItem(encounterId, prescriptionId, r.medicationId(), r.dose(), r.route(),
                 r.frequency(), r.daysCount(), r.quantity(), r.unitCode()));
     }
@@ -84,7 +96,9 @@ public class PrescriptionController {
     private PrescriptionResponse view(Prescription p) {
         List<ItemResponse> lines = service.itemsOf(p.getPrescriptionId()).stream()
                 .map(ItemResponse::from).toList();
+        List<WarningResponse> warnings = service.warningsFor(p).stream()
+                .map(w -> new WarningResponse(w.code(), w.message())).toList();
         return new PrescriptionResponse(p.getPrescriptionId(), p.getEncounterId(), p.getPrescriberId(),
-                p.getStatus().name(), p.getIssuedAt(), lines);
+                p.getStatus().name(), p.getIssuedAt(), lines, warnings);
     }
 }

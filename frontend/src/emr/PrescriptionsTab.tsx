@@ -2,13 +2,178 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { emrApi, errorMessage } from "./emrApi";
 import { PRESCRIPTION_STATUS_LABEL } from "./types";
-import type { EncounterStatus, MedicationSummary, Prescription } from "./types";
+import type {
+  EncounterStatus,
+  MedicationSummary,
+  Prescription,
+  PrescriptionLineInput,
+  PrescriptionWarning,
+} from "./types";
 
 const CAN_PRESCRIBE: EncounterStatus[] = [
   "IN_PROGRESS",
   "PENDING_LAB_RAD",
   "DIAGNOSED",
 ];
+
+const WARNING_TEXT: Record<string, string> = {
+  ALLERGY_UNKNOWN: "Thông tin dị ứng chưa biết hoặc chưa xác minh.",
+  ALLERGY_MATCH: "Thuốc có thể liên quan đến dị ứng đã ghi nhận.",
+};
+const POLICY_NOTE =
+  "Chưa có quy tắc xử lý được duyệt (OPEN-08): hệ thống chỉ cảnh báo, không chặn.";
+
+function Warnings({ warnings }: { warnings: PrescriptionWarning[] }) {
+  return (
+    <>
+      {warnings.map((w, index) => (
+        <p key={`${w.code}-${index}`} role="alert" className="warning">
+          {WARNING_TEXT[w.code] ?? w.code}
+          {w.code === "ALLERGY_MATCH" ? ` (${w.message})` : ""} {POLICY_NOTE}
+        </p>
+      ))}
+    </>
+  );
+}
+
+interface LineFormProps {
+  medications: MedicationSummary[];
+  submitLabel: string;
+  busy: boolean;
+  onSubmit: (line: PrescriptionLineInput) => Promise<boolean>;
+}
+
+function LineForm({ medications, submitLabel, busy, onSubmit }: LineFormProps) {
+  const [medicationId, setMedicationId] = useState("");
+  const [dose, setDose] = useState("");
+  const [route, setRoute] = useState("");
+  const [frequency, setFrequency] = useState("");
+  const [daysCount, setDaysCount] = useState("1");
+  const [quantity, setQuantity] = useState("");
+  const [unitCode, setUnitCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const selected = medicationId || medications[0]?.medicationId || "";
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const missing: string[] = [];
+    if (selected === "") missing.push("Thuốc");
+    if (dose.trim() === "") missing.push("Liều");
+    if (route.trim() === "") missing.push("Đường dùng");
+    if (frequency.trim() === "") missing.push("Tần suất");
+    if (quantity.trim() === "") missing.push("Số lượng");
+    if (unitCode.trim() === "") missing.push("Đơn vị");
+    if (missing.length > 0) {
+      setError(`Thiếu thông tin: ${missing.join(", ")}.`);
+      return;
+    }
+    const days = Number(daysCount);
+    const qty = Number(quantity);
+    if (!Number.isInteger(days) || days < 1) {
+      setError("Số ngày phải là số nguyên từ 1 trở lên.");
+      return;
+    }
+    if (Number.isNaN(qty) || qty <= 0) {
+      setError("Số lượng phải lớn hơn 0.");
+      return;
+    }
+    setError(null);
+    const ok = await onSubmit({
+      medicationId: selected,
+      dose: dose.trim(),
+      route: route.trim(),
+      frequency: frequency.trim(),
+      daysCount: days,
+      quantity: qty,
+      unitCode: unitCode.trim(),
+    });
+    if (ok) {
+      setDose("");
+      setRoute("");
+      setFrequency("");
+      setDaysCount("1");
+      setQuantity("");
+      setUnitCode("");
+    }
+  }
+
+  return (
+    <>
+      <form onSubmit={(event) => void submit(event)}>
+        <label>
+          Thuốc
+          <select
+            value={selected}
+            onChange={(e) => setMedicationId(e.target.value)}
+          >
+            {medications.map((m) => (
+              <option key={m.medicationId} value={m.medicationId}>
+                {m.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Liều
+          <input
+            value={dose}
+            onChange={(e) => setDose(e.target.value)}
+            maxLength={100}
+          />
+        </label>
+        <label>
+          Đường dùng
+          <input
+            value={route}
+            onChange={(e) => setRoute(e.target.value)}
+            maxLength={80}
+          />
+        </label>
+        <label>
+          Tần suất
+          <input
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value)}
+            maxLength={120}
+          />
+        </label>
+        <label>
+          Số ngày
+          <input
+            value={daysCount}
+            onChange={(e) => setDaysCount(e.target.value)}
+            inputMode="numeric"
+          />
+        </label>
+        <label>
+          Số lượng
+          <input
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            inputMode="decimal"
+          />
+        </label>
+        <label>
+          Đơn vị
+          <input
+            value={unitCode}
+            onChange={(e) => setUnitCode(e.target.value)}
+            maxLength={40}
+          />
+        </label>
+        <button type="submit" disabled={busy}>
+          {submitLabel}
+        </button>
+      </form>
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
 
 interface CardProps {
   encounterId: string;
@@ -23,15 +188,6 @@ function PrescriptionCard({
   medications,
   onChanged,
 }: CardProps) {
-  const [medicationId, setMedicationId] = useState(
-    medications[0]?.medicationId ?? "",
-  );
-  const [dose, setDose] = useState("");
-  const [route, setRoute] = useState("");
-  const [frequency, setFrequency] = useState("");
-  const [daysCount, setDaysCount] = useState("1");
-  const [quantity, setQuantity] = useState("");
-  const [unitCode, setUnitCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,58 +195,20 @@ function PrescriptionCard({
   const canCancel =
     prescription.status === "DRAFT" || prescription.status === "ORDERED";
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: () => Promise<unknown>): Promise<boolean> {
     setBusy(true);
     setError(null);
     try {
       await action();
       await onChanged();
+      return true;
     } catch (e) {
       setError(errorMessage(e));
+      return false;
     } finally {
       setBusy(false);
     }
   }
-
-  async function addItem(event: FormEvent) {
-    event.preventDefault();
-    const days = Number(daysCount);
-    const qty = Number(quantity);
-    if (!Number.isInteger(days) || days < 1) {
-      setError("Số ngày phải là số nguyên từ 1 trở lên.");
-      return;
-    }
-    if (Number.isNaN(qty) || qty <= 0) {
-      setError("Số lượng phải lớn hơn 0.");
-      return;
-    }
-    await run(async () => {
-      await emrApi.addPrescriptionItem(
-        encounterId,
-        prescription.prescriptionId,
-        {
-          medicationId,
-          dose: dose.trim(),
-          route: route.trim(),
-          frequency: frequency.trim(),
-          daysCount: days,
-          quantity: qty,
-          unitCode: unitCode.trim(),
-        },
-      );
-      setDose("");
-      setRoute("");
-      setFrequency("");
-      setDaysCount("1");
-      setQuantity("");
-      setUnitCode("");
-    });
-  }
-
-  const formComplete =
-    [medicationId, dose, route, frequency, unitCode].every(
-      (v) => v.trim() !== "",
-    ) && quantity.trim() !== "";
 
   return (
     <div className="card">
@@ -107,105 +225,50 @@ function PrescriptionCard({
           </>
         )}
       </p>
-      {prescription.items.length === 0 ? (
-        <p>Đơn chưa có thuốc.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Thuốc</th>
-              <th>Liều</th>
-              <th>Đường dùng</th>
-              <th>Tần suất</th>
-              <th>Số ngày</th>
-              <th>Số lượng</th>
+      <Warnings warnings={prescription.warnings} />
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Thuốc</th>
+            <th>Liều</th>
+            <th>Đường dùng</th>
+            <th>Tần suất</th>
+            <th>Số ngày</th>
+            <th>Số lượng</th>
+          </tr>
+        </thead>
+        <tbody>
+          {prescription.items.map((i) => (
+            <tr key={i.lineNo}>
+              <td>{i.lineNo}</td>
+              <td>{i.medicationLabel}</td>
+              <td>{i.dose}</td>
+              <td>{i.route}</td>
+              <td>{i.frequency}</td>
+              <td>{i.daysCount}</td>
+              <td>
+                {i.quantity} {i.unitCode}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {prescription.items.map((i) => (
-              <tr key={i.lineNo}>
-                <td>{i.lineNo}</td>
-                <td>{i.medicationLabel}</td>
-                <td>{i.dose}</td>
-                <td>{i.route}</td>
-                <td>{i.frequency}</td>
-                <td>{i.daysCount}</td>
-                <td>
-                  {i.quantity} {i.unitCode}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
       {isDraft && (
-        <form onSubmit={(event) => void addItem(event)}>
-          <label>
-            Thuốc
-            <select
-              value={medicationId}
-              onChange={(e) => setMedicationId(e.target.value)}
-            >
-              {medications.map((m) => (
-                <option key={m.medicationId} value={m.medicationId}>
-                  {m.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Liều
-            <input
-              value={dose}
-              onChange={(e) => setDose(e.target.value)}
-              maxLength={100}
-            />
-          </label>
-          <label>
-            Đường dùng
-            <input
-              value={route}
-              onChange={(e) => setRoute(e.target.value)}
-              maxLength={80}
-            />
-          </label>
-          <label>
-            Tần suất
-            <input
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value)}
-              maxLength={120}
-            />
-          </label>
-          <label>
-            Số ngày
-            <input
-              value={daysCount}
-              onChange={(e) => setDaysCount(e.target.value)}
-              inputMode="numeric"
-            />
-          </label>
-          <label>
-            Số lượng
-            <input
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              inputMode="decimal"
-            />
-          </label>
-          <label>
-            Đơn vị
-            <input
-              value={unitCode}
-              onChange={(e) => setUnitCode(e.target.value)}
-              maxLength={40}
-            />
-          </label>
-          <button type="submit" disabled={busy || !formComplete}>
-            Thêm thuốc
-          </button>
-        </form>
+        <LineForm
+          medications={medications}
+          submitLabel="Thêm thuốc"
+          busy={busy}
+          onSubmit={(line) =>
+            run(() =>
+              emrApi.addPrescriptionItem(
+                encounterId,
+                prescription.prescriptionId,
+                line,
+              ),
+            )
+          }
+        />
       )}
       <div className="toolbar">
         {isDraft && (
@@ -284,14 +347,16 @@ export function PrescriptionsTab({
     void load();
   }, [load]);
 
-  async function create() {
+  async function create(line: PrescriptionLineInput): Promise<boolean> {
     setCreating(true);
     setActionError(null);
     try {
-      await emrApi.createPrescription(encounterId);
+      await emrApi.createPrescription(encounterId, [line]);
       await load();
+      return true;
     } catch (e) {
       setActionError(errorMessage(e));
+      return false;
     } finally {
       setCreating(false);
     }
@@ -300,16 +365,17 @@ export function PrescriptionsTab({
   return (
     <section>
       <h3>Đơn thuốc</h3>
+      <p>Đơn thuốc chỉ ghi nhận kê đơn, chưa cấp phát.</p>
       {CAN_PRESCRIBE.includes(status) ? (
-        <div className="toolbar">
-          <button
-            type="button"
-            disabled={creating}
-            onClick={() => void create()}
-          >
-            {creating ? "Đang tạo…" : "Tạo đơn thuốc nháp"}
-          </button>
-        </div>
+        <>
+          <h4>Tạo đơn thuốc (nhập dòng thuốc đầu tiên)</h4>
+          <LineForm
+            medications={medications}
+            submitLabel="Tạo đơn"
+            busy={creating}
+            onSubmit={create}
+          />
+        </>
       ) : (
         <p>Không tạo đơn thuốc mới được khi lần khám ở trạng thái này.</p>
       )}

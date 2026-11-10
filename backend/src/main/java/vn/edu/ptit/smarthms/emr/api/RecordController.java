@@ -1,6 +1,7 @@
 package vn.edu.ptit.smarthms.emr.api;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,11 +17,16 @@ import vn.edu.ptit.smarthms.emr.service.RecordService;
 @RestController
 @RequestMapping("/api/v1/emr/encounters/{encounterId}/record")
 public class RecordController {
+    public record VersionGuardRequest(@NotNull @Min(1) Integer expectedVersion) {}
+
     /** userId tạm thời do client gửi; V.2 thay bằng người dùng đăng nhập. */
+    public record LockRequest(@NotNull UUID userId, @NotNull @Min(1) Integer expectedVersion) {}
+
     public record UserRequest(@NotNull UUID userId) {}
 
     public record AddendumRequest(@NotBlank @Size(max = 2000) String reason,
-                                  @NotBlank @Size(max = 4000) String content) {}
+                                  @NotBlank @Size(max = 4000) String content,
+                                  @NotNull @Min(1) Integer expectedVersion) {}
 
     public record VersionResponse(int versionNo, String sha256Hex, OffsetDateTime versionCreatedAt,
                                   String payload) {
@@ -42,10 +48,19 @@ public class RecordController {
 
     public RecordController(RecordService service) { this.service = service; }
 
+    @GetMapping
+    public RecordResponse get(@PathVariable UUID encounterId) {
+        return RecordResponse.from(service.metadata(encounterId));
+    }
+
+        @DeleteMapping
+    public void delete(@PathVariable UUID encounterId) {
+        service.rejectDelete(encounterId);
+    }
     @PostMapping("/versions")
     @ResponseStatus(HttpStatus.CREATED)
-    public VersionResponse snapshot(@PathVariable UUID encounterId) {
-        return VersionResponse.from(service.snapshot(encounterId));
+    public VersionResponse snapshot(@PathVariable UUID encounterId, @Valid @RequestBody VersionGuardRequest req) {
+        return VersionResponse.from(service.snapshot(encounterId, req.expectedVersion()));
     }
 
     @GetMapping("/versions")
@@ -59,20 +74,27 @@ public class RecordController {
     }
 
     @PostMapping("/submit")
-    public RecordResponse submit(@PathVariable UUID encounterId) {
-        return RecordResponse.from(service.submit(encounterId));
+    public RecordResponse submit(@PathVariable UUID encounterId, @Valid @RequestBody VersionGuardRequest req) {
+        return RecordResponse.from(service.submit(encounterId, req.expectedVersion()));
+    }
+
+    @PostMapping("/return")
+    public RecordResponse returnForCorrection(@PathVariable UUID encounterId,
+                                              @Valid @RequestBody VersionGuardRequest req) {
+        return RecordResponse.from(service.returnForCorrection(encounterId, req.expectedVersion()));
     }
 
     @PostMapping("/lock")
-    public RecordResponse lock(@PathVariable UUID encounterId, @Valid @RequestBody UserRequest req) {
-        return RecordResponse.from(service.lock(encounterId, req.userId()));
+    public RecordResponse lock(@PathVariable UUID encounterId, @Valid @RequestBody LockRequest req) {
+        return RecordResponse.from(service.lock(encounterId, req.userId(), req.expectedVersion()));
     }
 
     @PostMapping("/addenda")
     @ResponseStatus(HttpStatus.CREATED)
     public AddendumResponse createAddendum(@PathVariable UUID encounterId,
                                            @Valid @RequestBody AddendumRequest req) {
-        return AddendumResponse.from(service.createAddendum(encounterId, req.reason(), req.content()));
+        return AddendumResponse.from(service.createAddendum(
+                encounterId, req.reason(), req.content(), req.expectedVersion()));
     }
 
     @GetMapping("/addenda")

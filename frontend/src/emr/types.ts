@@ -78,7 +78,7 @@ export interface Observation {
 export const NEXT_STATUS: Record<EncounterStatus, EncounterStatus[]> = {
   WAITING: ["IN_PROGRESS", "CANCELLED", "NO_SHOW"],
   IN_PROGRESS: ["PENDING_LAB_RAD", "DIAGNOSED", "CANCELLED"],
-  PENDING_LAB_RAD: ["IN_PROGRESS", "DIAGNOSED"],
+  PENDING_LAB_RAD: ["IN_PROGRESS"],
   DIAGNOSED: ["COMPLETED"],
   COMPLETED: [],
   CANCELLED: [],
@@ -155,6 +155,7 @@ export interface Prescription {
   status: PrescriptionStatus;
   issuedAt: string | null;
   items: PrescriptionItem[];
+  warnings: PrescriptionWarning[];
 }
 
 export interface MedicationSummary {
@@ -179,6 +180,7 @@ export interface MedicalRecord {
   encounterId: string;
   recordStatus: RecordStatus;
   currentVersion: number;
+  version: number;
   lockedAt: string | null;
   createdAt: string;
 }
@@ -204,4 +206,38 @@ export interface Addendum {
 export interface UserSummary {
   userId: string;
   username: string;
+}
+export type ResultQuality = "VALID" | "QUARANTINED";
+export type ResultDisposition = "ACCEPTED" | "QUARANTINED" | "DUPLICATE";
+
+export interface ClinicalResult {
+  resultId: string;
+  orderId: string;
+  sourceSystem: string;
+  sourceResultId: string;
+  sourceVersion: string;
+  receivedAt: string;
+  resultAt: string | null;
+  payload: string;
+  abnormalFlag: boolean | null;
+  quality: ResultQuality;
+}
+
+export interface ResultIngest {
+  disposition: ResultDisposition;
+  result: ClinicalResult;
+}
+export interface PrescriptionWarning {
+  code: string;
+  message: string;
+}
+
+export interface PrescriptionLineInput {
+  medicationId: string;
+  dose: string;
+  route: string;
+  frequency: string;
+  daysCount: number;
+  quantity: number;
+  unitCode: string;
 }

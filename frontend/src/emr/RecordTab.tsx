@@ -82,15 +82,16 @@ export function RecordTab({
       .catch((e) => setError(errorMessage(e)));
   }, []);
 
+  // Sau mỗi thao tác (kể cả lỗi 409 do phiên bản cũ) tải lại để lấy phiên bản mới nhất.
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
     setActionError(null);
     try {
       await action();
-      await load();
     } catch (e) {
       setActionError(errorMessage(e));
     } finally {
+      await load();
       setBusy(false);
     }
   }
@@ -106,10 +107,12 @@ export function RecordTab({
 
   async function addAddendum(event: FormEvent) {
     event.preventDefault();
+    if (!record) return;
     await run(async () => {
       await emrApi.createAddendum(encounterId, {
         reason: reason.trim(),
         content: content.trim(),
+        expectedVersion: record.version,
       });
       setReason("");
       setContent("");
@@ -146,6 +149,8 @@ export function RecordTab({
             </dd>
             <dt>Phiên bản hiện tại</dt>
             <dd>{record.currentVersion}</dd>
+            <dt>Mã kiểm soát thay đổi</dt>
+            <dd>{record.version}</dd>
             <dt>Khóa lúc</dt>
             <dd>{formatTime(record.lockedAt)}</dd>
           </dl>
@@ -182,7 +187,9 @@ export function RecordTab({
                   type="button"
                   disabled={busy}
                   onClick={() =>
-                    void run(() => emrApi.createVersion(encounterId))
+                    void run(() =>
+                      emrApi.createVersion(encounterId, record.version),
+                    )
                   }
                 >
                   Chốt phiên bản {record.currentVersion}
@@ -196,7 +203,9 @@ export function RecordTab({
                       : undefined
                   }
                   onClick={() =>
-                    void run(() => emrApi.submitRecord(encounterId))
+                    void run(() =>
+                      emrApi.submitRecord(encounterId, record.version),
+                    )
                   }
                 >
                   Nộp hồ sơ để ký
@@ -204,15 +213,30 @@ export function RecordTab({
               </>
             )}
             {record.recordStatus === "PENDING_SIGNATURE" && (
-              <button
-                type="button"
-                disabled={busy || !userId}
-                onClick={() =>
-                  void run(() => emrApi.lockRecord(encounterId, userId))
-                }
-              >
-                Khóa hồ sơ
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={busy || !userId}
+                  onClick={() =>
+                    void run(() =>
+                      emrApi.lockRecord(encounterId, userId, record.version),
+                    )
+                  }
+                >
+                  Khóa demo (không phải chữ ký số)
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void run(() =>
+                      emrApi.returnRecord(encounterId, record.version),
+                    )
+                  }
+                >
+                  Trả về sửa
+                </button>
+              </>
             )}
             {record.recordStatus === "DRAFT" && status !== "COMPLETED" && (
               <span>

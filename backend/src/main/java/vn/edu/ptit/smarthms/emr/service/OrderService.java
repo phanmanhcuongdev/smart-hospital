@@ -10,25 +10,30 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
 import vn.edu.ptit.smarthms.emr.domain.MedicalOrder;
+import vn.edu.ptit.smarthms.emr.port.AuditPort;
+import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalOrderRepository;
 
 @Service
 public class OrderService {
     private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
-    /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
     private static final Set<EncounterStatus> CAN_ORDER =
             Set.of(EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD);
 
     private final MedicalOrderRepository orders;
     private final MedicalEncounterRepository encounters;
     private final RecordLockGuard lockGuard;
+    private final ReferenceLookupPort lookup;
+    private final AuditPort audit;
 
     public OrderService(MedicalOrderRepository orders, MedicalEncounterRepository encounters,
-                        RecordLockGuard lockGuard) {
+                        RecordLockGuard lockGuard, ReferenceLookupPort lookup, AuditPort audit) {
         this.orders = orders;
         this.encounters = encounters;
         this.lockGuard = lockGuard;
+        this.lookup = lookup;
+        this.audit = audit;
     }
 
     @Transactional
@@ -38,9 +43,14 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot create order when encounter is " + e.getStatus());
         }
+        if (!lookup.practitionerActive(e.getAttendingEmployeeId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Ordering practitioner is not ACTIVE");
+        }
         // Tạm dùng bác sĩ phụ trách làm người chỉ định; V.2 thay bằng người dùng đăng nhập.
-        return orders.save(MedicalOrder.create(
+        MedicalOrder saved = orders.save(MedicalOrder.create(
                 encounterId, e.getAttendingEmployeeId(), type, externalOrderRef, DEV_ACTOR));
+        audit.success("ORDER_CREATED", "MEDICAL_ORDER", saved.getOrderId(), null);
+        return saved;
     }
 
     @Transactional(readOnly = true)

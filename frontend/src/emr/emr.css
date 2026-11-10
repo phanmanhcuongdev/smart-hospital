@@ -95,3 +95,16 @@
   margin: 1rem 0 0.25rem;
   font-size: 1rem;
 }
+.emr tr.quarantined td {
+  background: #b0002014;
+}
+.emr code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+.emr .warning {
+  color: #6b4a00;
+  background: #ffeeba;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.4rem;
+}

@@ -3,11 +3,7 @@ import type { FormEvent } from "react";
 import { emrApi, errorMessage } from "./emrApi";
 import type { EncounterStatus, Observation } from "./types";
 
-const CAN_RECORD: EncounterStatus[] = [
-  "WAITING",
-  "IN_PROGRESS",
-  "PENDING_LAB_RAD",
-];
+const CAN_RECORD: EncounterStatus[] = ["IN_PROGRESS"];
 
 export function ObservationsTab({
   encounterId,
@@ -49,6 +45,10 @@ export function ObservationsTab({
     const hasText = textValue.trim() !== "";
     if (hasNumber === hasText) {
       setFormError("Nhập đúng một trong hai: giá trị số hoặc giá trị chữ.");
+      return;
+    }
+    if (hasNumber && unitCode.trim() === "") {
+      setFormError("Giá trị số cần có đơn vị (ví dụ bpm, mmHg).");
       return;
     }
     const number = Number(numericValue);
@@ -120,7 +120,9 @@ export function ObservationsTab({
           </button>
         </form>
       ) : (
-        <p>Không ghi thêm sinh hiệu được khi lần khám ở trạng thái này.</p>
+        <p>
+          Chỉ ghi sinh hiệu được khi lần khám đang ở trạng thái "Đang khám".
+        </p>
       )}
       {formError && (
         <p role="alert" className="error">
