@@ -4,7 +4,10 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.ptit.smarthms.common.security.ActorResolver;
 import vn.edu.ptit.smarthms.emr.service.DiagnosisService;
 
 @RestController
@@ -16,19 +19,25 @@ public class DiagnosisController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public DiagnosisResponse create(@PathVariable UUID encounterId,
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public DiagnosisResponse create(Authentication authentication,
+                                    @PathVariable UUID encounterId,
                                     @Valid @RequestBody CreateDiagnosisRequest req) {
         return DiagnosisResponse.from(service.create(
-                encounterId, req.diagnosisType(), req.icd10Code(), req.narrative()));
+                ActorResolver.from(authentication), encounterId, req.diagnosisType(), req.icd10Code(), req.narrative()));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public List<DiagnosisResponse> list(@PathVariable UUID encounterId) {
         return service.list(encounterId).stream().map(DiagnosisResponse::from).toList();
     }
 
     @PatchMapping("/{diagnosisId}/confirm")
-    public DiagnosisResponse confirm(@PathVariable UUID encounterId, @PathVariable UUID diagnosisId) {
-        return DiagnosisResponse.from(service.confirm(encounterId, diagnosisId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public DiagnosisResponse confirm(Authentication authentication,
+                                     @PathVariable UUID encounterId,
+                                     @PathVariable UUID diagnosisId) {
+        return DiagnosisResponse.from(service.confirm(ActorResolver.from(authentication), encounterId, diagnosisId));
     }
 }

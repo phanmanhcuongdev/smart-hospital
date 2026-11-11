@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { emrApi, errorMessage } from "./emrApi";
 import { ENCOUNTER_STATUSES, STATUS_LABEL } from "./types";
 import type {
+  DepartmentSummary,
   Encounter,
   EncounterStatus,
   PatientSummary,
@@ -17,6 +18,7 @@ function formatTime(iso: string | null): string {
 
 export function EncounterListPage() {
   const [status, setStatus] = useState<EncounterStatus | "">("");
+  const [filterDepartmentId, setFilterDepartmentId] = useState("");
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<Encounter[]>([]);
   const [total, setTotal] = useState(0);
@@ -25,8 +27,10 @@ export function EncounterListPage() {
 
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [practitioners, setPractitioners] = useState<PractitionerSummary[]>([]);
+  const [departments, setDepartments] = useState<DepartmentSummary[]>([]);
   const [patientId, setPatientId] = useState("");
   const [practitionerId, setPractitionerId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,6 +41,7 @@ export function EncounterListPage() {
     try {
       const result = await emrApi.listEncounters({
         status,
+        departmentId: filterDepartmentId || undefined,
         page,
         size: PAGE_SIZE,
       });
@@ -47,19 +52,35 @@ export function EncounterListPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, page]);
+  }, [status, filterDepartmentId, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   useEffect(() => {
-    Promise.all([emrApi.searchPatients(""), emrApi.listPractitioners()])
-      .then(([p, d]) => {
-        setPatients(p);
-        setPractitioners(d);
-        if (p[0]) setPatientId(p[0].patientId);
-        if (d[0]) setPractitionerId(d[0].employeeId);
+    Promise.all([
+      emrApi.searchPatients(""),
+      emrApi.listPractitioners(),
+      emrApi.listDepartments(),
+    ])
+      .then(([p, docs, depts]) => {
+        const pList = Array.isArray(p) ? p : [];
+        const dList = Array.isArray(docs) ? docs : [];
+        const deptList = Array.isArray(depts) ? depts : [];
+        setPatients(pList);
+        setPractitioners(dList);
+        setDepartments(deptList);
+        if (pList[0]) setPatientId(pList[0].patientId);
+        if (dList[0]) {
+          setPractitionerId(dList[0].employeeId);
+          if (dList[0].departmentName) {
+            const matchedDept = deptList.find(
+              (d) => d.displayName === dList[0].departmentName,
+            );
+            if (matchedDept) setDepartmentId(matchedDept.departmentId);
+          }
+        }
       })
       .catch((e) => setFormError(errorMessage(e)));
   }, []);
@@ -73,6 +94,7 @@ export function EncounterListPage() {
       const created = await emrApi.createEncounter({
         patientId,
         attendingEmployeeId: practitionerId,
+        departmentId: departmentId || undefined,
       });
       setNotice(
         `Đã tạo lần khám ${created.encounterId.slice(0, 8)} (${STATUS_LABEL[created.status]}).`,
@@ -87,10 +109,13 @@ export function EncounterListPage() {
   }
 
   const patientName = new Map(
-    patients.map((p) => [p.patientId, p.displayName]),
+    (patients || []).map((p) => [p.patientId, p.displayName]),
   );
   const doctorName = new Map(
-    practitioners.map((d) => [d.employeeId, d.fullName]),
+    (practitioners || []).map((d) => [d.employeeId, d.fullName]),
+  );
+  const deptName = new Map(
+    (departments || []).map((d) => [d.departmentId, d.displayName]),
   );
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -116,11 +141,39 @@ export function EncounterListPage() {
             Bác sĩ phụ trách
             <select
               value={practitionerId}
-              onChange={(e) => setPractitionerId(e.target.value)}
+              onChange={(e) => {
+                const docId = e.target.value;
+                setPractitionerId(docId);
+                const selectedDoc = practitioners.find(
+                  (d) => d.employeeId === docId,
+                );
+                if (selectedDoc?.departmentName) {
+                  const matchedDept = departments.find(
+                    (dept) => dept.displayName === selectedDoc.departmentName,
+                  );
+                  if (matchedDept) setDepartmentId(matchedDept.departmentId);
+                }
+              }}
             >
               {practitioners.map((d) => (
                 <option key={d.employeeId} value={d.employeeId}>
-                  {d.fullName}
+                  {d.fullName} ({d.employeeCode})
+                  {d.departmentName ? ` — ${d.departmentName}` : ""}
+                  {d.hasVerifiedLicense === false ? " [⚠️ Chưa có CCHN]" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Khoa / Phòng khám
+            <select
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+            >
+              <option value="">-- Mặc định theo bác sĩ phụ trách --</option>
+              {departments.map((dept) => (
+                <option key={dept.departmentId} value={dept.departmentId}>
+                  {dept.displayName} ({dept.departmentCode})
                 </option>
               ))}
             </select>
@@ -147,6 +200,23 @@ export function EncounterListPage() {
       <section>
         <h2>Danh sách lần khám</h2>
         <div className="toolbar">
+          <label>
+            Khoa / Phòng
+            <select
+              value={filterDepartmentId}
+              onChange={(e) => {
+                setFilterDepartmentId(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">Tất cả</option>
+              {departments.map((d) => (
+                <option key={d.departmentId} value={d.departmentId}>
+                  {d.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Trạng thái
             <select
@@ -184,6 +254,7 @@ export function EncounterListPage() {
                 <th>Mã</th>
                 <th>Bệnh nhân</th>
                 <th>Bác sĩ</th>
+                <th>Khoa / Phòng</th>
                 <th>Trạng thái</th>
                 <th>Bắt đầu</th>
                 <th>Tạo lúc</th>
@@ -203,6 +274,11 @@ export function EncounterListPage() {
                   <td>
                     {doctorName.get(e.attendingEmployeeId) ??
                       e.attendingEmployeeId.slice(0, 8)}
+                  </td>
+                  <td>
+                    {e.departmentId
+                      ? deptName.get(e.departmentId) ?? e.departmentId.slice(0, 8)
+                      : "—"}
                   </td>
                   <td>
                     <span className="badge">{STATUS_LABEL[e.status]}</span>

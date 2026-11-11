@@ -3,16 +3,28 @@ import { statusLabel } from "./lib/labels";
 import type { FormEvent } from "react";
 import { ApiError, health, listDecisions, listDepartments, listRoleProfiles, searchEmployees } from "./lib/api";
 import type { Auth, Decision, Department, Employee } from "./lib/api";
-import { DEMO_USERS, demoUser, isHr } from "./auth/auth";
+import { DEMO_USERS, canAccessEmr, canAccessHr, demoUser, isHr } from "./auth/auth";
 import { HrScreens } from "./features/hr/HrScreens";
 import type { HrView } from "./features/hr/HrScreens";
+import { EmrApp } from "./emr/EmrApp";
+import { emrApi } from "./emr/emrApi";
+import type { Encounter } from "./emr/types";
 import { ErrorBanner, Field, StatCard, SubmitRow, errText } from "./components/ui/ui";
 import { AppShell } from "./components/ui/layout";
 import type { NavEntry, SearchHit } from "./components/ui/layout";
 
-type View = HrView | { name: "overview" };
+export type EmrView =
+  | { name: "emr-list" }
+  | { name: "emr-detail"; encounterId: string };
+
+export type View = HrView | EmrView | { name: "overview" };
 
 const SESSION_KEY = "smarthms-auth";
+const DETAIL_ROUTE = /^#\/encounters\/([0-9a-fA-F-]{36})$/;
+
+function isEmrView(v: View): v is EmrView {
+  return v.name === "emr-list" || v.name === "emr-detail";
+}
 
 function loadSession(): Auth | null {
   try {
@@ -29,8 +41,14 @@ function loadSession(): Auth | null {
   }
 }
 
-function defaultView(): View {
-  return { name: "hr-employees" };
+function defaultView(auth: Auth): View {
+  if (canAccessHr(auth.role) && !canAccessEmr(auth.role)) {
+    return { name: "hr-employees" };
+  }
+  if (canAccessEmr(auth.role) && !canAccessHr(auth.role)) {
+    return { name: "emr-list" };
+  }
+  return { name: "overview" };
 }
 
 function asArray<T>(value: unknown): T[] {
@@ -41,7 +59,7 @@ export function App() {
   const [auth, setAuth] = useState<Auth | null>(() => loadSession());
   const [view, setView] = useState<View>(() => {
     const restored = loadSession();
-    return restored === null ? { name: "hr-employees" } : defaultView();
+    return restored === null ? { name: "hr-employees" } : defaultView(restored);
   });
   const [healthStatus, setHealthStatus] = useState("Unknown");
   const [healthError, setHealthError] = useState<string | null>(null);
@@ -51,6 +69,20 @@ export function App() {
     health()
       .then((r) => setHealthStatus(r.status))
       .catch((err: unknown) => setHealthError(errText(err)));
+  }, []);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash;
+      const match = DETAIL_ROUTE.exec(hash);
+      if (match?.[1]) {
+        setView({ name: "emr-detail", encounterId: match[1] });
+      } else if (hash === "#/" || hash === "#/encounters") {
+        setView((prev) => (isEmrView(prev) ? { name: "emr-list" } : prev));
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   useEffect(() => {
@@ -65,28 +97,41 @@ export function App() {
   const signIn = (next: Auth) => {
     setAuth(next);
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
-    setView(defaultView());
+    setView(defaultView(next));
   };
 
   const signOut = () => {
     setAuth(null);
     sessionStorage.removeItem(SESSION_KEY);
+    window.location.hash = "";
     setView({ name: "hr-employees" });
   };
-
 
   const goToPendingDecisions = async () => {
     if (auth === null) return;
     try {
       const pending = asArray<Decision>(await listDecisions(auth, "")).filter((d) => d.decisionStatus === "DRAFT").sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      if (pending.length > 0 && pending[0] !== undefined) { setView({ name: "hr-employee", employeeId: pending[0].employeeId, tab: "decisions" }); return; }
+      if (pending.length > 0 && pending[0] !== undefined) {
+        window.location.hash = "";
+        setView({ name: "hr-employee", employeeId: pending[0].employeeId, tab: "decisions" });
+        return;
+      }
     } catch { /* fall through to the employee list */ }
+    window.location.hash = "";
     setView({ name: "hr-employees" });
   };
 
   const onSearchSelect = (hit: SearchHit) => {
-    if (hit.kind === "Employee") setView({ name: "hr-employee", employeeId: hit.id, tab: "overview" });
-    else setView({ name: "hr-departments" });
+    if (hit.kind === "Employee") {
+      window.location.hash = "";
+      setView({ name: "hr-employee", employeeId: hit.id, tab: "overview" });
+    } else if (hit.kind === "Department") {
+      window.location.hash = "";
+      setView({ name: "hr-departments" });
+    } else if (hit.kind === "Encounter") {
+      window.location.hash = `#/encounters/${hit.id}`;
+      setView({ name: "emr-detail", encounterId: hit.id });
+    }
   };
 
   const primaryAction = () => { window.dispatchEvent(new CustomEvent("smarthms:primary-action")); };
@@ -109,17 +154,94 @@ export function App() {
     );
   }
 
-  const hr = isHr(auth.role);
+  const hr = canAccessHr(auth.role);
+  const emr = canAccessEmr(auth.role);
+
   const nav: NavEntry[] = [
-    { id: "overview", label: "Tổng quan", group: "Tổng quan", icon: "⌂", active: view.name === "overview", onSelect: () => setView({ name: "overview" }) },
-    ...(hr ? [
-      { id: "hr-employees", label: "Danh sách nhân viên", group: "Nhân sự", icon: "👥", active: view.name === "hr-employees" || view.name === "hr-employee", onSelect: () => setView({ name: "hr-employees" }) },
-      { id: "hr-departments", label: "Phòng ban", group: "Nhân sự", icon: "🏢", active: view.name === "hr-departments", onSelect: () => setView({ name: "hr-departments" }) },
-      { id: "hr-roles", label: "Hồ sơ vai trò", group: "Nhân sự", icon: "🪪", active: view.name === "hr-roles", onSelect: () => setView({ name: "hr-roles" }) },
-      { id: "hr-decisions", label: "Quyết định chờ duyệt", group: "Nhân sự", icon: "✋", active: false, badge: pendingCount, onSelect: () => { void goToPendingDecisions(); } },
-    ] : []),
+    {
+      id: "overview",
+      label: "Tổng quan",
+      group: "Tổng quan",
+      icon: "⌂",
+      active: view.name === "overview",
+      onSelect: () => {
+        window.location.hash = "";
+        setView({ name: "overview" });
+      },
+    },
+    ...(emr
+      ? [
+          {
+            id: "emr-list",
+            label: "Khám bệnh & Bệnh án",
+            group: "Khám bệnh",
+            icon: "🩺",
+            active: isEmrView(view),
+            onSelect: () => {
+              window.location.hash = "#/";
+              setView({ name: "emr-list" });
+            },
+          },
+        ]
+      : []),
+    ...(hr
+      ? [
+          {
+            id: "hr-employees",
+            label: "Danh sách nhân viên",
+            group: "Nhân sự",
+            icon: "👥",
+            active: view.name === "hr-employees" || view.name === "hr-employee",
+            onSelect: () => {
+              window.location.hash = "";
+              setView({ name: "hr-employees" });
+            },
+          },
+          {
+            id: "hr-departments",
+            label: "Phòng ban",
+            group: "Nhân sự",
+            icon: "🏢",
+            active: view.name === "hr-departments",
+            onSelect: () => {
+              window.location.hash = "";
+              setView({ name: "hr-departments" });
+            },
+          },
+          {
+            id: "hr-roles",
+            label: "Hồ sơ vai trò",
+            group: "Nhân sự",
+            icon: "🪪",
+            active: view.name === "hr-roles",
+            onSelect: () => {
+              window.location.hash = "";
+              setView({ name: "hr-roles" });
+            },
+          },
+          {
+            id: "hr-decisions",
+            label: "Quyết định chờ duyệt",
+            group: "Nhân sự",
+            icon: "✋",
+            active: false,
+            badge: pendingCount,
+            onSelect: () => {
+              window.location.hash = "";
+              void goToPendingDecisions();
+            },
+          },
+        ]
+      : []),
   ];
-  const bottomNav: NavEntry[] = [nav[0], nav[1], nav[2], nav[4]].filter((e): e is NavEntry => e !== undefined);
+
+  const bottomNav: NavEntry[] = [
+    nav.find((e) => e.id === "overview"),
+    nav.find((e) => e.id === "emr-list"),
+    nav.find((e) => e.id === "hr-employees"),
+    nav.find((e) => e.id === "hr-departments"),
+  ].filter((e): e is NavEntry => e !== undefined);
+
   const fab = view.name === "hr-employees" && hr
     ? { label: "Thêm nhân viên", onClick: primaryAction }
     : view.name === "hr-departments" && hr
@@ -128,7 +250,19 @@ export function App() {
 
   return (
     <AppShell auth={auth} nav={nav} bottomNav={bottomNav} pendingDecisions={pendingCount} onOpenPendingDecisions={() => { void goToPendingDecisions(); }} onSearchSelect={onSearchSelect} onSignOut={signOut} fab={fab}>
-      {view.name === "overview" ? <Overview auth={auth} healthStatus={healthStatus} go={setView} /> : <HrScreens auth={auth} view={view} go={setView} />}
+      {view.name === "overview" ? (
+        <Overview auth={auth} healthStatus={healthStatus} go={setView} />
+      ) : isEmrView(view) ? (
+        <EmrApp
+          encounterId={view.name === "emr-detail" ? view.encounterId : undefined}
+          onBackToList={() => {
+            window.location.hash = "#/";
+            setView({ name: "emr-list" });
+          }}
+        />
+      ) : (
+        <HrScreens auth={auth} view={view} go={setView} />
+      )}
     </AppShell>
   );
 }
@@ -138,34 +272,93 @@ function Overview({ auth, healthStatus, go }: { auth: Auth; healthStatus: string
   const [departments, setDepartments] = useState<Department[] | null>(null);
   const [roleCount, setRoleCount] = useState<number | null>(null);
   const [pending, setPending] = useState<Decision[]>([]);
+  const [encounters, setEncounters] = useState<Encounter[] | null>(null);
+  const [encounterTotal, setEncounterTotal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        if (isHr(auth.role)) {
-          const [emps, depts, roles, decs] = await Promise.all([searchEmployees(auth, ""), listDepartments(auth), listRoleProfiles(auth), listDecisions(auth, "")]);
-          if (cancelled) return;
-          setEmployees(asArray<Employee>(emps));
-          setDepartments(asArray<Department>(depts));
-          setRoleCount(asArray<unknown>(roles).length);
-          setPending(asArray<Decision>(decs).filter((d) => d.decisionStatus === "DRAFT"));
+        if (canAccessHr(auth.role)) {
+          const [emps, depts, roles, decs] = await Promise.all([
+            searchEmployees(auth, ""),
+            listDepartments(auth),
+            listRoleProfiles(auth),
+            listDecisions(auth, ""),
+          ]);
+          if (!cancelled) {
+            setEmployees(asArray<Employee>(emps));
+            setDepartments(asArray<Department>(depts));
+            setRoleCount(asArray<unknown>(roles).length);
+            setPending(asArray<Decision>(decs).filter((d) => d.decisionStatus === "DRAFT"));
+          }
         }
-      } catch (err) { if (cancelled === false) setError(errText(err)); }
+        if (canAccessEmr(auth.role)) {
+          try {
+            const res = await emrApi.listEncounters({ page: 0, size: 20 });
+            if (!cancelled) {
+              setEncounters(res.items);
+              setEncounterTotal(res.total);
+            }
+          } catch {
+            // ignore if EMR backend not reachable yet
+          }
+        }
+      } catch (err) {
+        if (cancelled === false) setError(errText(err));
+      }
     };
     void load();
     return () => { cancelled = true; };
   }, [auth]);
 
+  const inProgressEncounters = encounters?.filter((e) => e.status === "IN_PROGRESS") ?? [];
+  const waitingEncounters = encounters?.filter((e) => e.status === "WAITING") ?? [];
 
   return (
     <section aria-label={"Tổng quan"}>
       <h2>{"Tổng quan"}</h2>
       <p className="overview-lead">{"Tóm tắt trực tiếp các hồ sơ bạn có thể xem. Mỗi thẻ sẽ mở phần tương ứng."} {"Trạng thái backend:"} {healthStatus}</p>
       {error !== null ? <ErrorBanner error={error} /> : null}
+
       <div className="stat-grid">
-        {isHr(auth.role) && (
+        {canAccessEmr(auth.role) && (
+          <>
+            <StatCard
+              label={"Lượt khám"}
+              value={encounterTotal === null ? "-" : encounterTotal}
+              detail={"Tổng số lượt khám trong hệ thống"}
+              action={"Mở danh sách khám"}
+              onSelect={() => {
+                window.location.hash = "#/";
+                go({ name: "emr-list" });
+              }}
+            />
+            <StatCard
+              label={"Đang khám"}
+              value={inProgressEncounters.length}
+              detail={"Ca bệnh đang trong quá trình khám"}
+              action={"Xem ca đang khám"}
+              onSelect={() => {
+                window.location.hash = "#/";
+                go({ name: "emr-list" });
+              }}
+            />
+            <StatCard
+              label={"Đang chờ"}
+              value={waitingEncounters.length}
+              detail={"Bệnh nhân đang chờ tiếp nhận"}
+              action={"Xem danh sách chờ"}
+              onSelect={() => {
+                window.location.hash = "#/";
+                go({ name: "emr-list" });
+              }}
+            />
+          </>
+        )}
+
+        {canAccessHr(auth.role) && (
           <>
             <StatCard label={"Nhân viên"} value={employees === null ? "-" : employees.length} detail={"Hồ sơ nhân viên bạn có thể xem"} action={"Mở nhân viên"} onSelect={() => go({ name: "hr-employees" })} />
             <StatCard label={"Phòng ban"} value={departments === null ? "-" : departments.length} detail={"Các phòng ban đang hoạt động và không hoạt động"} action={"Mở phòng ban"} onSelect={() => go({ name: "hr-departments" })} />
@@ -174,9 +367,39 @@ function Overview({ auth, healthStatus, go }: { auth: Auth; healthStatus: string
           </>
         )}
       </div>
+
       <h3>{"Cần chú ý"}</h3>
-      {isHr(auth.role) && (
+      {canAccessEmr(auth.role) && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h4 style={{ margin: "0.5rem 0" }}>{"Ca khám đang diễn ra"}</h4>
+          {encounters === null && <p className="muted">{"Đang tải danh sách ca khám..."}</p>}
+          {encounters !== null && inProgressEncounters.length === 0 && (
+            <p className="muted">{"Không có ca khám nào đang diễn ra."}</p>
+          )}
+          {inProgressEncounters.slice(0, 5).map((e) => (
+            <div key={e.encounterId} className="card card-nested">
+              <strong>{"Lượt khám: " + e.encounterId.slice(0, 8)}</strong> -{" "}
+              {"Trạng thái: " + statusLabel(e.status)}
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-small"
+                  onClick={() => {
+                    window.location.hash = `#/encounters/${e.encounterId}`;
+                    go({ name: "emr-detail", encounterId: e.encounterId });
+                  }}
+                >
+                  {"Mở ca khám"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {canAccessHr(auth.role) && (
         <div>
+          <h4 style={{ margin: "0.5rem 0" }}>{"Quyết định nhân sự chờ duyệt"}</h4>
           {pending.length === 0 && <p className="muted">{"Không có quyết định chờ duyệt nào."}</p>}
           {pending.slice(0, 5).map((d) => (
             <div key={d.id} className="card card-nested">

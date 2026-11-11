@@ -26,6 +26,7 @@ export interface Encounter {
   patientId: string;
   appointmentId: string | null;
   attendingEmployeeId: string;
+  departmentId?: string | null;
   status: EncounterStatus;
   startedAt: string | null;
   completedAt: string | null;
@@ -39,6 +40,14 @@ export interface Page<T> {
   total: number;
 }
 
+export interface DepartmentSummary {
+  departmentId: string;
+  departmentCode: string;
+  displayName: string;
+  departmentType: string | null;
+  active: boolean;
+}
+
 export interface PatientSummary {
   patientId: string;
   displayName: string;
@@ -49,6 +58,10 @@ export interface PractitionerSummary {
   employeeId: string;
   employeeCode: string;
   fullName: string;
+  status?: string;
+  active?: boolean;
+  departmentName?: string | null;
+  hasVerifiedLicense?: boolean;
 }
 export interface Diagnosis {
   diagnosisId: string;

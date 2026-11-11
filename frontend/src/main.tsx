@@ -1,9 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { EmrApp } from "./emr/EmrApp";
+import { App } from "./App";
 import "./styles.css";
+import "./emr/emr.css";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <EmrApp />
+    <App />
   </React.StrictMode>,
 );

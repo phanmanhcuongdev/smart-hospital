@@ -3,10 +3,11 @@ import { greetingFor, shiftFor, statusLabel } from "../../lib/labels";
 import type { ReactNode } from "react";
 import type { Auth, Department, Employee } from "../../lib/api";
 import { listDepartments, searchEmployees } from "../../lib/api";
-import { isHr } from "../../auth/auth";
+import { isHr, canAccessHr, canAccessEmr } from "../../auth/auth";
+import { emrApi } from "../../emr/emrApi";
 
 export interface SearchHit {
-  kind: "Employee" | "Department";
+  kind: "Employee" | "Department" | "Encounter";
   id: string;
   title: string;
   detail: string;
@@ -70,7 +71,7 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
       try {
         const q = trimmed.toLowerCase();
         const found: SearchHit[] = []; 
-        if (isHr(auth.role)) {
+        if (canAccessHr(auth.role)) {
           const employees = toArray<Employee>(await searchEmployees(auth, ""));
           for (const e of employees) {
             if (matches(e.fullName, q) || matches(e.employeeCode, q)) {
@@ -82,6 +83,23 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
             if (matches(d.displayName, q) || matches(d.departmentCode, q)) {
               found.push({ kind: "Department", id: d.id, title: d.displayName, detail: d.departmentCode });
             }
+          }
+        }
+        if (canAccessEmr(auth.role)) {
+          try {
+            const encounters = await emrApi.listEncounters({ page: 0, size: 20 });
+            for (const item of encounters.items) {
+              if (matches(item.encounterId, q)) {
+                found.push({
+                  kind: "Encounter",
+                  id: item.encounterId,
+                  title: "Lượt khám " + item.encounterId.slice(0, 8),
+                  detail: "Trạng thái: " + statusLabel(item.status),
+                });
+              }
+            }
+          } catch {
+            // ignore
           }
         }
         if (cancelled === false) {
@@ -105,16 +123,16 @@ export function SearchPalette({ auth, onClose, onSelect }: { auth: Auth; onClose
   return (
     <div className="palette-overlay" role="presentation" onClick={onClose}>
       <div className="palette" role="dialog" aria-modal="true" aria-label={"Tìm kiếm toàn cục"} onClick={(e) => e.stopPropagation()}>
-        <input ref={inputRef} className="palette-input" type="search" placeholder={"Tìm kiếm nhân viên, phòng ban"} aria-label={"Tìm kiếm nhân viên, phòng ban"} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
+        <input ref={inputRef} className="palette-input" type="search" placeholder={"Tìm kiếm nhân viên, phòng ban, ca khám..."} aria-label={"Tìm kiếm nhân viên, phòng ban, ca khám"} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, hits.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(s - 1, 0)); } if (e.key === "Enter" && hits.length > 0) openHit(hits[selected] ?? hits[0]); }} />
         {loading && <p className="palette-hint">{"Đang tìm trong hồ sơ thực."}</p>}
         {error !== "" && <p className="palette-hint" role="alert">{error}</p>}
         {query.trim().length >= 2 && loading === false && hits.length === 0 && error === "" && (<p className="palette-hint">{"Không có kết quả nào trong các hồ sơ bạn có thể xem."}</p>)}
-        {query.trim().length < 2 && (<p className="palette-hint">{"Nhập ít nhất 2 ký tự. Nhân viên được tìm theo tên hoặc mã; phòng ban theo tên hoặc mã."}</p>)}
+        {query.trim().length < 2 && (<p className="palette-hint">{"Nhập ít nhất 2 ký tự để tìm kiếm theo tên hoặc mã."}</p>)}
         <ul className="palette-list">
           {hits.map((hit, index) => (
             <li key={hit.kind + "-" + hit.id}>
               <button type="button" className={"palette-item" + (index === selected ? " selected" : "")} onClick={() => openHit(hit)} onMouseEnter={() => setSelected(index)}>
-                <span className="palette-kind">{hit.kind === "Employee" ? "Nhân viên" : "Phòng ban"}</span>
+                <span className="palette-kind">{hit.kind === "Employee" ? "Nhân viên" : hit.kind === "Department" ? "Phòng ban" : "Ca khám"}</span>
                 <span><strong>{hit.title}</strong><br /><span className="muted">{hit.detail}</span></span>
               </button>
             </li>

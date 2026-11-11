@@ -2,9 +2,9 @@ spring:
   application:
     name: smarthms-backend
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5439/smarthms}
-    username: ${DATABASE_USERNAME:smarthms}
-    password: ${DATABASE_PASSWORD:smarthms_local_only}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:${DB_HOST_PORT:5439}/${POSTGRES_DB:smarthms}}
+    username: ${DATABASE_USERNAME:${POSTGRES_USER:smarthms}}
+    password: ${DATABASE_PASSWORD:${POSTGRES_PASSWORD:change-me-for-local-use}}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -22,5 +22,8 @@ management:
     health:
       show-details: never
 logging:
+  pattern:
+    level: "%5p [corr=%X{correlationId:-}]"
   level:
     root: INFO
+    vn.edu.ptit.smarthms: DEBUG

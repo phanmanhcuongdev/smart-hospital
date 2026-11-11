@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
 import vn.edu.ptit.smarthms.emr.domain.MedicalOrder;
@@ -15,7 +16,6 @@ import vn.edu.ptit.smarthms.emr.repository.MedicalOrderRepository;
 
 @Service
 public class OrderService {
-    private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
     /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
     private static final Set<EncounterStatus> CAN_ORDER =
             Set.of(EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD);
@@ -32,15 +32,15 @@ public class OrderService {
     }
 
     @Transactional
-    public MedicalOrder create(UUID encounterId, MedicalOrder.Type type, String externalOrderRef) {
+    public MedicalOrder create(Actor actor, UUID encounterId, MedicalOrder.Type type, String externalOrderRef) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalEncounter e = findEncounter(encounterId);
         if (!CAN_ORDER.contains(e.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot create order when encounter is " + e.getStatus());
         }
-        // Tạm dùng bác sĩ phụ trách làm người chỉ định; V.2 thay bằng người dùng đăng nhập.
         return orders.save(MedicalOrder.create(
-                encounterId, e.getAttendingEmployeeId(), type, externalOrderRef, DEV_ACTOR));
+                encounterId, e.getAttendingEmployeeId(), type, externalOrderRef, actor.principalName()));
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +50,8 @@ public class OrderService {
     }
 
     @Transactional
-    public MedicalOrder changeStatus(UUID encounterId, UUID orderId, MedicalOrder.Status next) {
+    public MedicalOrder changeStatus(Actor actor, UUID encounterId, UUID orderId, MedicalOrder.Status next) {
+        actor.requireAnyRole("DOCTOR", "CLS_TECHNICIAN", "ADMIN");
         findEncounter(encounterId);
         lockGuard.assertEditable(encounterId);
         MedicalOrder o = orders.findById(orderId)
@@ -60,7 +61,7 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot change order status from " + o.getOrderStatus() + " to " + next);
         }
-        o.changeStatus(next, DEV_ACTOR);
+        o.changeStatus(next, actor.principalName());
         return o;
     }
 

@@ -79,12 +79,20 @@ export async function api<T>(auth: Auth, method: string, path: string, body?: un
 }
 
 export async function health(): Promise<{ status: string; timestamp?: string }> {
-  const res = await fetch(apiUrl("/api/v1/system/health"));
-  const data = (await res.json()) as { status: string; timestamp?: string };
-  if (res.ok) {
-    return data;
+  try {
+    const res = await fetch(apiUrl("/api/v1/system/health"));
+    if (!res.ok) {
+      throw new ApiError(res.status, "ERROR", "Backend chưa sẵn sàng (HTTP " + res.status + ").");
+    }
+    const text = await res.text();
+    if (!text) {
+      throw new ApiError(res.status, "ERROR", "Phản hồi rỗng từ backend.");
+    }
+    return JSON.parse(text) as { status: string; timestamp?: string };
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(0, "ERROR", "Không thể kết nối đến backend (cổng 8080). Vui lòng kiểm tra backend đã được khởi động chưa.");
   }
-  throw new ApiError(res.status, "ERROR", "Backend is unavailable.");
 }
 
 // HR response shapes (mirror the backend HrResponses records).

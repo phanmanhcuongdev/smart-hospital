@@ -9,7 +9,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.ptit.smarthms.common.security.ActorResolver;
 import vn.edu.ptit.smarthms.emr.domain.ClinicalObservation;
 import vn.edu.ptit.smarthms.emr.service.ObservationService;
 
@@ -42,12 +45,17 @@ public class ObservationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ObservationResponse create(@PathVariable UUID encounterId, @Valid @RequestBody CreateRequest r) {
-        return ObservationResponse.from(service.create(encounterId, r.metricCode(), r.numericValue(),
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'ADMIN')")
+    public ObservationResponse create(Authentication authentication,
+                                      @PathVariable UUID encounterId,
+                                      @Valid @RequestBody CreateRequest r) {
+        return ObservationResponse.from(service.create(
+                ActorResolver.from(authentication), encounterId, r.metricCode(), r.numericValue(),
                 r.textValue(), r.unitCode(), r.observedAt(), r.sourceType(), r.sourceRef(), r.quality()));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'CLS_TECHNICIAN', 'RECORDS_MANAGER', 'ADMIN')")
     public List<ObservationResponse> list(@PathVariable UUID encounterId) {
         return service.list(encounterId).stream().map(ObservationResponse::from).toList();
     }

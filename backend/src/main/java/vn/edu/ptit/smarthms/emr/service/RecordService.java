@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.emr.domain.Addendum;
 import vn.edu.ptit.smarthms.emr.domain.DiagnosisStatus;
 import vn.edu.ptit.smarthms.emr.domain.DiagnosisType;
@@ -23,8 +24,6 @@ import vn.edu.ptit.smarthms.emr.repository.RecordSnapshotRepository.VersionRow;
 
 @Service
 public class RecordService {
-    private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
-
     private final MedicalRecordRepository records;
     private final MedicalEncounterRepository encounters;
     private final DiagnosisRepository diagnoses;
@@ -45,12 +44,13 @@ public class RecordService {
 
     /** Chốt một phiên bản hồ sơ đang soạn thảo. */
     @Transactional
-    public VersionRow snapshot(UUID encounterId) {
+    public VersionRow snapshot(Actor actor, UUID encounterId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalRecord r = findRecord(encounterId);
         requireStatus(r, RecordStatus.DRAFT, "create a version");
         int versionNo = r.getCurrentVersion();
-        snapshots.insertVersion(r.getRecordId(), versionNo, snapshots.buildPayload(encounterId), DEV_ACTOR);
-        r.advanceVersion(DEV_ACTOR);
+        snapshots.insertVersion(r.getRecordId(), versionNo, snapshots.buildPayload(encounterId), actor.principalName());
+        r.advanceVersion(actor.principalName());
         return snapshots.get(r.getRecordId(), versionNo).orElseThrow();
     }
 
@@ -66,7 +66,8 @@ public class RecordService {
     }
 
     @Transactional
-    public MedicalRecord submit(UUID encounterId) {
+    public MedicalRecord submit(Actor actor, UUID encounterId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalEncounter e = encounters.findById(encounterId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Encounter not found"));
         MedicalRecord r = findRecord(encounterId);
@@ -80,26 +81,28 @@ public class RecordService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Record needs a confirmed primary diagnosis");
         }
-        r.submitForSignature(DEV_ACTOR);
+        r.submitForSignature(actor.principalName());
         return r;
     }
 
     @Transactional
-    public MedicalRecord lock(UUID encounterId, UUID userId) {
+    public MedicalRecord lock(Actor actor, UUID encounterId, UUID userId) {
+        actor.requireAnyRole("DOCTOR", "RECORDS_MANAGER", "ADMIN");
         MedicalRecord r = findRecord(encounterId);
         requireStatus(r, RecordStatus.PENDING_SIGNATURE, "lock the record");
         requireUser(userId);
         snapshots.insertVersion(r.getRecordId(), r.getCurrentVersion(),
-                snapshots.buildPayload(encounterId), DEV_ACTOR);
-        r.lock(userId, DEV_ACTOR);
+                snapshots.buildPayload(encounterId), actor.principalName());
+        r.lock(userId, actor.principalName());
         return r;
     }
 
     @Transactional
-    public Addendum createAddendum(UUID encounterId, String reason, String content) {
+    public Addendum createAddendum(Actor actor, UUID encounterId, String reason, String content) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalRecord r = findRecord(encounterId);
         requireStatus(r, RecordStatus.LOCKED, "add an addendum");
-        return addenda.save(Addendum.create(r.getRecordId(), reason.trim(), content.trim(), DEV_ACTOR));
+        return addenda.save(Addendum.create(r.getRecordId(), reason.trim(), content.trim(), actor.principalName()));
     }
 
     @Transactional(readOnly = true)
@@ -108,7 +111,8 @@ public class RecordService {
     }
 
     @Transactional
-    public Addendum confirmAddendum(UUID encounterId, UUID addendumId, UUID userId) {
+    public Addendum confirmAddendum(Actor actor, UUID encounterId, UUID addendumId, UUID userId) {
+        actor.requireAnyRole("DOCTOR", "RECORDS_MANAGER", "ADMIN");
         MedicalRecord r = findRecord(encounterId);
         Addendum a = addenda.findById(addendumId)
                 .filter(x -> x.getRecordId().equals(r.getRecordId()))
@@ -117,7 +121,7 @@ public class RecordService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Addendum already confirmed");
         }
         requireUser(userId);
-        a.confirm(userId, DEV_ACTOR);
+        a.confirm(userId, actor.principalName());
         return a;
     }
 

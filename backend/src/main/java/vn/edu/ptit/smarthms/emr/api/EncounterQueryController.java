@@ -2,7 +2,7 @@ package vn.edu.ptit.smarthms.emr.api;
 
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.service.EncounterQueryService;
@@ -17,12 +17,13 @@ public class EncounterQueryController {
     public EncounterQueryController(EncounterQueryService service) { this.service = service; }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'CLS_TECHNICIAN', 'RECORDS_MANAGER', 'RECEPTION', 'ADMIN')")
     public PageResponse search(@RequestParam(required = false) UUID patientId,
                                @RequestParam(required = false) EncounterStatus status,
+                               @RequestParam(required = false) UUID departmentId,
                                @RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "20") int size) {
-        
-        var result = service.search(patientId, status, page, size);
+        var result = service.search(patientId, status, departmentId, page, size);
         return new PageResponse(result.getContent().stream().map(EncounterResponse::from).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements());
     }

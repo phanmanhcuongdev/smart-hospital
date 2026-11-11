@@ -18,7 +18,7 @@ public class EncounterQueryService {
     public EncounterQueryService(MedicalEncounterRepository repository) { this.repository = repository; }
 
     @Transactional(readOnly = true)
-    public Page<MedicalEncounter> search(UUID patientId, EncounterStatus status, int page, int size) {
+    public Page<MedicalEncounter> search(UUID patientId, EncounterStatus status, UUID departmentId, int page, int size) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100),
                 Sort.by(Sort.Direction.DESC, "createdAt"));
         if (patientId != null && status != null) {
@@ -27,9 +27,20 @@ public class EncounterQueryService {
         if (patientId != null) {
             return repository.findByPatientId(patientId, pageable);
         }
+        if (departmentId != null && status != null) {
+            return repository.findByDepartmentIdAndStatus(departmentId, status, pageable);
+        }
+        if (departmentId != null) {
+            return repository.findByDepartmentId(departmentId, pageable);
+        }
         if (status != null) {
             return repository.findByStatus(status, pageable);
         }
         return repository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MedicalEncounter> search(UUID patientId, EncounterStatus status, int page, int size) {
+        return search(patientId, status, null, page, size);
     }
 }

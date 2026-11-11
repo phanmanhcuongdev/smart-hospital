@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 
-/** Tạm thời đọc fixture; V.5 thay bằng port thật của HR, SYS và Patient. */
+/** Tích hợp dữ liệu danh mục EMR với HR, SYS và Patient qua JDBC. */
 @Component
 class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
     private final JdbcTemplate jdbc;
@@ -24,6 +24,74 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
     public boolean practitionerExists(UUID id) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
                 "select exists(select 1 from hr.employee where employee_id = ?)", Boolean.class, id));
+    }
+
+    @Override
+    public Optional<PractitionerDetails> getPractitionerDetails(UUID id) {
+        String sql = """
+                select e.employee_id, e.employee_code, e.full_name, e.status,
+                       d.department_id, d.display_name as department_name,
+                       exists(
+                           select 1 from hr.license_certification lc
+                           where lc.employee_id = e.employee_id
+                             and lc.verification_status = 'VERIFIED'
+                             and (lc.valid_from is null or lc.valid_from <= current_date)
+                             and (lc.valid_until is null or lc.valid_until >= current_date)
+                       ) as has_verified_license
+                from hr.employee e
+                left join hr.employment emp on emp.employee_id = e.employee_id and emp.end_at is null
+                left join hr.department d on emp.department_id = d.department_id
+                where e.employee_id = ?
+                order by emp.start_at desc nulls last
+                limit 1
+                """;
+        List<PractitionerDetails> list = jdbc.query(sql, (rs, n) -> {
+            String status = rs.getString("status");
+            boolean active = "ACTIVE".equalsIgnoreCase(status);
+            boolean hasLicense = rs.getBoolean("has_verified_license");
+            return new PractitionerDetails(
+                    rs.getObject("employee_id", UUID.class),
+                    rs.getString("employee_code"),
+                    rs.getString("full_name"),
+                    status,
+                    active,
+                    hasLicense,
+                    rs.getObject("department_id", UUID.class),
+                    rs.getString("department_name")
+            );
+        }, id);
+        return list.stream().findFirst();
+    }
+
+    @Override
+    public boolean departmentExists(UUID id) {
+        if (id == null) return false;
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from hr.department where department_id = ?)", Boolean.class, id));
+    }
+
+    @Override
+    public boolean isDepartmentActive(UUID id) {
+        if (id == null) return false;
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from hr.department where department_id = ? and active)", Boolean.class, id));
+    }
+
+    @Override
+    public List<DepartmentSummary> listDepartments() {
+        return jdbc.query("""
+                select department_id, department_code, display_name, department_type, active
+                from hr.department
+                where active
+                order by display_name
+                limit 100
+                """, (rs, n) -> new DepartmentSummary(
+                rs.getObject("department_id", UUID.class),
+                rs.getString("department_code"),
+                rs.getString("display_name"),
+                rs.getString("department_type"),
+                rs.getBoolean("active")
+        ));
     }
 
     @Override
@@ -52,18 +120,36 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                         rs.getString("display_name"), rs.getString("identity_status")),
                 "%" + escaped + "%");
     }
-        @Override
+
+    @Override
     public List<PractitionerSummary> listPractitioners() {
         return jdbc.query("""
-                select employee_id, employee_code, full_name
-                from hr.employee
-                order by full_name
+                select e.employee_id, e.employee_code, e.full_name, e.status,
+                       d.display_name as department_name,
+                       exists(
+                           select 1 from hr.license_certification lc
+                           where lc.employee_id = e.employee_id
+                             and lc.verification_status = 'VERIFIED'
+                             and (lc.valid_from is null or lc.valid_from <= current_date)
+                             and (lc.valid_until is null or lc.valid_until >= current_date)
+                       ) as has_verified_license
+                from hr.employee e
+                left join hr.employment emp on emp.employee_id = e.employee_id and emp.end_at is null
+                left join hr.department d on emp.department_id = d.department_id
+                order by e.full_name
                 limit 100
-                """, (rs, n) -> new PractitionerSummary(rs.getObject("employee_id", UUID.class),
-                        rs.getString("employee_code"), rs.getString("full_name")));
+                """, (rs, n) -> new PractitionerSummary(
+                rs.getObject("employee_id", UUID.class),
+                rs.getString("employee_code"),
+                rs.getString("full_name"),
+                rs.getString("status"),
+                "ACTIVE".equalsIgnoreCase(rs.getString("status")),
+                rs.getString("department_name"),
+                rs.getBoolean("has_verified_license")
+        ));
     }
 
-        @Override
+    @Override
     public List<MedicationSummary> listMedications() {
         return jdbc.query("""
                 select medication_id, display_name
@@ -74,7 +160,8 @@ class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
                 """, (rs, n) -> new MedicationSummary(rs.getObject("medication_id", UUID.class),
                         rs.getString("display_name")));
     }
-        @Override
+
+    @Override
     public List<UserSummary> listUsers() {
         return jdbc.query("""
                 select user_id, username

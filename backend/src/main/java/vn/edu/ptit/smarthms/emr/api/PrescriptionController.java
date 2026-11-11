@@ -12,7 +12,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.ptit.smarthms.common.security.ActorResolver;
 import vn.edu.ptit.smarthms.emr.domain.Prescription;
 import vn.edu.ptit.smarthms.emr.domain.PrescriptionItem;
 import vn.edu.ptit.smarthms.emr.service.PrescriptionService;
@@ -41,7 +44,7 @@ public class PrescriptionController {
     }
 
     public record PrescriptionResponse(UUID prescriptionId, UUID encounterId, UUID prescriberId,
-                                       String status, OffsetDateTime issuedAt, List<ItemResponse> items) {}
+                                        String status, OffsetDateTime issuedAt, List<ItemResponse> items) {}
 
     private final PrescriptionService service;
 
@@ -49,36 +52,48 @@ public class PrescriptionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PrescriptionResponse create(@PathVariable UUID encounterId) {
-        return view(service.create(encounterId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public PrescriptionResponse create(Authentication authentication, @PathVariable UUID encounterId) {
+        return view(service.create(ActorResolver.from(authentication), encounterId));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public List<PrescriptionResponse> list(@PathVariable UUID encounterId) {
         return service.list(encounterId).stream().map(this::view).toList();
     }
 
     @GetMapping("/{prescriptionId}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public PrescriptionResponse get(@PathVariable UUID encounterId, @PathVariable UUID prescriptionId) {
         return view(service.get(encounterId, prescriptionId));
     }
 
     @PostMapping("/{prescriptionId}/items")
     @ResponseStatus(HttpStatus.CREATED)
-    public PrescriptionResponse addItem(@PathVariable UUID encounterId, @PathVariable UUID prescriptionId,
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public PrescriptionResponse addItem(Authentication authentication,
+                                        @PathVariable UUID encounterId,
+                                        @PathVariable UUID prescriptionId,
                                         @Valid @RequestBody AddItemRequest r) {
-        return view(service.addItem(encounterId, prescriptionId, r.medicationId(), r.dose(), r.route(),
+        return view(service.addItem(ActorResolver.from(authentication), encounterId, prescriptionId, r.medicationId(), r.dose(), r.route(),
                 r.frequency(), r.daysCount(), r.quantity(), r.unitCode()));
     }
 
     @PostMapping("/{prescriptionId}/issue")
-    public PrescriptionResponse issue(@PathVariable UUID encounterId, @PathVariable UUID prescriptionId) {
-        return view(service.issue(encounterId, prescriptionId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public PrescriptionResponse issue(Authentication authentication,
+                                      @PathVariable UUID encounterId,
+                                      @PathVariable UUID prescriptionId) {
+        return view(service.issue(ActorResolver.from(authentication), encounterId, prescriptionId));
     }
 
     @PostMapping("/{prescriptionId}/cancel")
-    public PrescriptionResponse cancel(@PathVariable UUID encounterId, @PathVariable UUID prescriptionId) {
-        return view(service.cancel(encounterId, prescriptionId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public PrescriptionResponse cancel(Authentication authentication,
+                                       @PathVariable UUID encounterId,
+                                       @PathVariable UUID prescriptionId) {
+        return view(service.cancel(ActorResolver.from(authentication), encounterId, prescriptionId));
     }
 
     private PrescriptionResponse view(Prescription p) {

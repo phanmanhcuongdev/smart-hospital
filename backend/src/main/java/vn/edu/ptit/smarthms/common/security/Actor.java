@@ -7,12 +7,15 @@ import java.util.Set;
 public record Actor(String principalName, Set<String> roles) {
 
     public boolean hasRole(String role) {
-        return roles != null && roles.contains(role);
+        return roles != null && (roles.contains(role) || roles.contains("ADMIN"));
     }
 
     public boolean hasAnyRole(String... wanted) {
         if (roles == null) {
             return false;
+        }
+        if (roles.contains("ADMIN")) {
+            return true;
         }
         for (String role : wanted) {
             if (roles.contains(role)) {

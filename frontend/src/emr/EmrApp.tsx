@@ -15,16 +15,27 @@ function useHash(): string {
   return hash;
 }
 
-export function EmrApp() {
-  const match = DETAIL_ROUTE.exec(useHash());
+export interface EmrAppProps {
+  encounterId?: string;
+  onBackToList?: () => void;
+}
+
+export function EmrApp({ encounterId, onBackToList }: EmrAppProps = {}) {
+  const hash = useHash();
+  const match = DETAIL_ROUTE.exec(hash);
+  const activeEncounterId = encounterId ?? match?.[1];
+
   return (
-    <main className="emr">
-      <h1>SmartHMS — Khám bệnh và hồ sơ bệnh án</h1>
-      {match?.[1] ? (
-        <EncounterDetailPage key={match[1]} encounterId={match[1]} />
+    <section className="emr" aria-label="Khám bệnh và hồ sơ bệnh án">
+      {activeEncounterId ? (
+        <EncounterDetailPage
+          key={activeEncounterId}
+          encounterId={activeEncounterId}
+          onBack={onBackToList}
+        />
       ) : (
         <EncounterListPage />
       )}
-    </main>
+    </section>
   );
 }

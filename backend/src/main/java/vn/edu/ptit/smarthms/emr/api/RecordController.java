@@ -8,7 +8,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.ptit.smarthms.common.security.ActorResolver;
 import vn.edu.ptit.smarthms.emr.domain.Addendum;
 import vn.edu.ptit.smarthms.emr.repository.RecordSnapshotRepository.VersionRow;
 import vn.edu.ptit.smarthms.emr.service.RecordService;
@@ -44,45 +47,56 @@ public class RecordController {
 
     @PostMapping("/versions")
     @ResponseStatus(HttpStatus.CREATED)
-    public VersionResponse snapshot(@PathVariable UUID encounterId) {
-        return VersionResponse.from(service.snapshot(encounterId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public VersionResponse snapshot(Authentication authentication, @PathVariable UUID encounterId) {
+        return VersionResponse.from(service.snapshot(ActorResolver.from(authentication), encounterId));
     }
 
     @GetMapping("/versions")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public List<VersionResponse> versions(@PathVariable UUID encounterId) {
         return service.listVersions(encounterId).stream().map(VersionResponse::from).toList();
     }
 
     @GetMapping("/versions/{versionNo}")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public VersionResponse version(@PathVariable UUID encounterId, @PathVariable int versionNo) {
         return VersionResponse.from(service.getVersion(encounterId, versionNo));
     }
 
     @PostMapping("/submit")
-    public RecordResponse submit(@PathVariable UUID encounterId) {
-        return RecordResponse.from(service.submit(encounterId));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public RecordResponse submit(Authentication authentication, @PathVariable UUID encounterId) {
+        return RecordResponse.from(service.submit(ActorResolver.from(authentication), encounterId));
     }
 
     @PostMapping("/lock")
-    public RecordResponse lock(@PathVariable UUID encounterId, @Valid @RequestBody UserRequest req) {
-        return RecordResponse.from(service.lock(encounterId, req.userId()));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'RECORDS_MANAGER', 'ADMIN')")
+    public RecordResponse lock(Authentication authentication, @PathVariable UUID encounterId, @Valid @RequestBody UserRequest req) {
+        return RecordResponse.from(service.lock(ActorResolver.from(authentication), encounterId, req.userId()));
     }
 
     @PostMapping("/addenda")
     @ResponseStatus(HttpStatus.CREATED)
-    public AddendumResponse createAddendum(@PathVariable UUID encounterId,
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public AddendumResponse createAddendum(Authentication authentication,
+                                           @PathVariable UUID encounterId,
                                            @Valid @RequestBody AddendumRequest req) {
-        return AddendumResponse.from(service.createAddendum(encounterId, req.reason(), req.content()));
+        return AddendumResponse.from(service.createAddendum(ActorResolver.from(authentication), encounterId, req.reason(), req.content()));
     }
 
     @GetMapping("/addenda")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'RECORDS_MANAGER', 'ADMIN')")
     public List<AddendumResponse> addenda(@PathVariable UUID encounterId) {
         return service.listAddenda(encounterId).stream().map(AddendumResponse::from).toList();
     }
 
     @PostMapping("/addenda/{addendumId}/confirm")
-    public AddendumResponse confirmAddendum(@PathVariable UUID encounterId, @PathVariable UUID addendumId,
+    @PreAuthorize("hasAnyRole('DOCTOR', 'RECORDS_MANAGER', 'ADMIN')")
+    public AddendumResponse confirmAddendum(Authentication authentication,
+                                            @PathVariable UUID encounterId,
+                                            @PathVariable UUID addendumId,
                                             @Valid @RequestBody UserRequest req) {
-        return AddendumResponse.from(service.confirmAddendum(encounterId, addendumId, req.userId()));
+        return AddendumResponse.from(service.confirmAddendum(ActorResolver.from(authentication), encounterId, addendumId, req.userId()));
     }
 }

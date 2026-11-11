@@ -11,4 +11,6 @@ public interface MedicalEncounterRepository extends JpaRepository<MedicalEncount
     Page<MedicalEncounter> findByPatientId(UUID patientId, Pageable pageable);
     Page<MedicalEncounter> findByStatus(EncounterStatus status, Pageable pageable);
     Page<MedicalEncounter> findByPatientIdAndStatus(UUID patientId, EncounterStatus status, Pageable pageable);
+    Page<MedicalEncounter> findByDepartmentId(UUID departmentId, Pageable pageable);
+    Page<MedicalEncounter> findByDepartmentIdAndStatus(UUID departmentId, EncounterStatus status, Pageable pageable);
 }

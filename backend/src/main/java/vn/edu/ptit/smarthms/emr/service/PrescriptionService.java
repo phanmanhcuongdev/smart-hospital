@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
 import vn.edu.ptit.smarthms.emr.domain.Prescription;
@@ -20,7 +21,6 @@ import vn.edu.ptit.smarthms.emr.repository.PrescriptionRepository;
 
 @Service
 public class PrescriptionService {
-    private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
     /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
     private static final Set<EncounterStatus> CAN_PRESCRIBE = Set.of(
             EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD, EncounterStatus.DIAGNOSED);
@@ -42,14 +42,14 @@ public class PrescriptionService {
     }
 
     @Transactional
-    public Prescription create(UUID encounterId) {
+    public Prescription create(Actor actor, UUID encounterId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalEncounter e = findEncounter(encounterId);
         if (!CAN_PRESCRIBE.contains(e.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot create prescription when encounter is " + e.getStatus());
         }
-        // Tạm dùng bác sĩ phụ trách làm người kê đơn; V.2 thay bằng người dùng đăng nhập.
-        return prescriptions.save(Prescription.createDraft(encounterId, e.getAttendingEmployeeId(), DEV_ACTOR));
+        return prescriptions.save(Prescription.createDraft(encounterId, e.getAttendingEmployeeId(), actor.principalName()));
     }
 
     @Transactional(readOnly = true)
@@ -70,9 +70,10 @@ public class PrescriptionService {
     }
 
     @Transactional
-    public Prescription addItem(UUID encounterId, UUID prescriptionId, UUID medicationId, String dose,
+    public Prescription addItem(Actor actor, UUID encounterId, UUID prescriptionId, UUID medicationId, String dose,
                                 String route, String frequency, int daysCount, BigDecimal quantity,
                                 String unitCode) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         findEncounter(encounterId);
         Prescription p = findForUpdate(encounterId, prescriptionId);
         if (p.getStatus() != Prescription.Status.DRAFT) {
@@ -84,7 +85,7 @@ public class PrescriptionService {
         int lineNo = (int) items.countByIdPrescriptionId(prescriptionId) + 1;
         try {
             items.saveAndFlush(PrescriptionItem.create(prescriptionId, lineNo, medicationId, label,
-                    dose.trim(), route.trim(), frequency.trim(), daysCount, quantity, unitCode.trim(), DEV_ACTOR));
+                    dose.trim(), route.trim(), frequency.trim(), daysCount, quantity, unitCode.trim(), actor.principalName()));
         } catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Could not add item, please retry");
         }
@@ -92,7 +93,8 @@ public class PrescriptionService {
     }
 
     @Transactional
-    public Prescription issue(UUID encounterId, UUID prescriptionId) {
+    public Prescription issue(Actor actor, UUID encounterId, UUID prescriptionId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         findEncounter(encounterId);
         Prescription p = findForUpdate(encounterId, prescriptionId);
         if (p.getStatus() != Prescription.Status.DRAFT) {
@@ -102,19 +104,20 @@ public class PrescriptionService {
         if (items.countByIdPrescriptionId(prescriptionId) == 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Prescription has no items");
         }
-        p.issue(DEV_ACTOR);
+        p.issue(actor.principalName());
         return p;
     }
 
     @Transactional
-    public Prescription cancel(UUID encounterId, UUID prescriptionId) {
+    public Prescription cancel(Actor actor, UUID encounterId, UUID prescriptionId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         findEncounter(encounterId);
         Prescription p = findForUpdate(encounterId, prescriptionId);
         if (!p.canCancel()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot cancel prescription when it is " + p.getStatus());
         }
-        p.cancel(DEV_ACTOR);
+        p.cancel(actor.principalName());
         return p;
     }
 

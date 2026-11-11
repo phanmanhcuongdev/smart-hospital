@@ -7,7 +7,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.ptit.smarthms.common.security.ActorResolver;
 import vn.edu.ptit.smarthms.emr.domain.MedicalOrder;
 import vn.edu.ptit.smarthms.emr.service.OrderService;
 
@@ -34,18 +37,25 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse create(@PathVariable UUID encounterId, @Valid @RequestBody CreateRequest req) {
-        return OrderResponse.from(service.create(encounterId, req.orderType(), req.externalOrderRef()));
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public OrderResponse create(Authentication authentication,
+                                @PathVariable UUID encounterId,
+                                @Valid @RequestBody CreateRequest req) {
+        return OrderResponse.from(service.create(ActorResolver.from(authentication), encounterId, req.orderType(), req.externalOrderRef()));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('DOCTOR', 'NURSE', 'CLS_TECHNICIAN', 'RECORDS_MANAGER', 'ADMIN')")
     public List<OrderResponse> list(@PathVariable UUID encounterId) {
         return service.list(encounterId).stream().map(OrderResponse::from).toList();
     }
 
     @PatchMapping("/{orderId}/status")
-    public OrderResponse changeStatus(@PathVariable UUID encounterId, @PathVariable UUID orderId,
+    @PreAuthorize("hasAnyRole('DOCTOR', 'CLS_TECHNICIAN', 'ADMIN')")
+    public OrderResponse changeStatus(Authentication authentication,
+                                      @PathVariable UUID encounterId,
+                                      @PathVariable UUID orderId,
                                       @Valid @RequestBody StatusRequest req) {
-        return OrderResponse.from(service.changeStatus(encounterId, orderId, req.status()));
+        return OrderResponse.from(service.changeStatus(ActorResolver.from(authentication), encounterId, orderId, req.status()));
     }
 }

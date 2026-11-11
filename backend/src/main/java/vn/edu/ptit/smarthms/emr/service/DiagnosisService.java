@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.emr.domain.Diagnosis;
 import vn.edu.ptit.smarthms.emr.domain.DiagnosisStatus;
 import vn.edu.ptit.smarthms.emr.domain.DiagnosisType;
@@ -17,7 +18,6 @@ import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 
 @Service
 public class DiagnosisService {
-    private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
     /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
     private static final Set<EncounterStatus> CAN_ADD =
             Set.of(EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD);
@@ -33,7 +33,8 @@ public class DiagnosisService {
     }
 
     @Transactional
-    public Diagnosis create(UUID encounterId, DiagnosisType type, String icd10Code, String narrative) {
+    public Diagnosis create(Actor actor, UUID encounterId, DiagnosisType type, String icd10Code, String narrative) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalEncounter e = findEncounter(encounterId);
         if (!CAN_ADD.contains(e.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -44,7 +45,7 @@ public class DiagnosisService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Encounter already has a primary diagnosis");
         }
-        return diagnoses.save(Diagnosis.create(encounterId, type, icd10Code, narrative, DEV_ACTOR));
+        return diagnoses.save(Diagnosis.create(encounterId, type, icd10Code, narrative, actor.principalName()));
     }
 
     @Transactional(readOnly = true)
@@ -54,7 +55,8 @@ public class DiagnosisService {
     }
 
     @Transactional
-    public Diagnosis confirm(UUID encounterId, UUID diagnosisId) {
+    public Diagnosis confirm(Actor actor, UUID encounterId, UUID diagnosisId) {
+        actor.requireAnyRole("DOCTOR", "ADMIN");
         MedicalEncounter e = findEncounter(encounterId);
         Diagnosis d = diagnoses.findById(diagnosisId)
                 .filter(x -> x.getEncounterId().equals(encounterId))
@@ -66,8 +68,7 @@ public class DiagnosisService {
         if (d.getDiagnosisStatus() == DiagnosisStatus.CONFIRMED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Diagnosis already confirmed");
         }
-        // Tạm dùng bác sĩ phụ trách làm người xác nhận; V.2 thay bằng người dùng đăng nhập.
-        d.confirm(e.getAttendingEmployeeId(), DEV_ACTOR);
+        d.confirm(e.getAttendingEmployeeId(), actor.principalName());
         return d;
     }
 

@@ -22,10 +22,17 @@ function formatTime(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString("vi-VN") : "—";
 }
 
-export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
+export function EncounterDetailPage({
+  encounterId,
+  onBack,
+}: {
+  encounterId: string;
+  onBack?: () => void;
+}) {
   const [encounter, setEncounter] = useState<Encounter | null>(null);
   const [patientName, setPatientName] = useState("");
   const [doctorName, setDoctorName] = useState("");
+  const [departmentName, setDepartmentName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -39,9 +46,10 @@ export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
     emrApi
       .getEncounter(encounterId)
       .then(async (e) => {
-        const [patients, doctors] = await Promise.all([
+        const [patients, doctors, depts] = await Promise.all([
           emrApi.searchPatients(""),
           emrApi.listPractitioners(),
+          emrApi.listDepartments(),
         ]);
         if (!active) return;
         setEncounter(e);
@@ -53,6 +61,14 @@ export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
           doctors.find((d) => d.employeeId === e.attendingEmployeeId)
             ?.fullName ?? e.attendingEmployeeId,
         );
+        if (e.departmentId) {
+          setDepartmentName(
+            depts.find((d) => d.departmentId === e.departmentId)?.displayName ??
+              e.departmentId,
+          );
+        } else {
+          setDepartmentName("—");
+        }
       })
       .catch((e) => {
         if (active) setError(errorMessage(e));
@@ -80,7 +96,18 @@ export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
   return (
     <>
       <p>
-        <a href="#/">← Danh sách lần khám</a>
+        <a
+          href="#/"
+          onClick={(e) => {
+            if (onBack) {
+              e.preventDefault();
+              window.location.hash = "#/";
+              onBack();
+            }
+          }}
+        >
+          ← Danh sách lần khám
+        </a>
       </p>
       {loading && <p role="status">Đang tải…</p>}
       {error && (
@@ -97,6 +124,8 @@ export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
               <dd>{patientName}</dd>
               <dt>Bác sĩ phụ trách</dt>
               <dd>{doctorName}</dd>
+              <dt>Khoa / Phòng</dt>
+              <dd>{departmentName}</dd>
               <dt>Trạng thái</dt>
               <dd>
                 <span className="badge">{STATUS_LABEL[encounter.status]}</span>
@@ -114,7 +143,9 @@ export function EncounterDetailPage({ encounterId }: { encounterId: string }) {
                   disabled={busy}
                   onClick={() => void changeStatus(next)}
                 >
-                  Chuyển sang: {STATUS_LABEL[next]}
+                  {next === "IN_PROGRESS" && encounter.status === "WAITING"
+                    ? "👉 Tiếp nhận ca khám (Bắt đầu khám)"
+                    : `Chuyển sang: ${STATUS_LABEL[next]}`}
                 </button>
               ))}
               {NEXT_STATUS[encounter.status].length === 0 && (

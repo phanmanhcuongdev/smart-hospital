@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.ptit.smarthms.common.security.Actor;
 import vn.edu.ptit.smarthms.emr.domain.ClinicalObservation;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
@@ -17,7 +18,6 @@ import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 
 @Service
 public class ObservationService {
-    private static final String DEV_ACTOR = "dev-stub"; // thay bằng user đăng nhập khi V.2 xong
     /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
     private static final Set<EncounterStatus> CAN_RECORD = Set.of(
             EncounterStatus.WAITING, EncounterStatus.IN_PROGRESS, EncounterStatus.PENDING_LAB_RAD);
@@ -32,10 +32,11 @@ public class ObservationService {
     }
 
     @Transactional
-    public ClinicalObservation create(UUID encounterId, String metricCode, BigDecimal numericValue,
+    public ClinicalObservation create(Actor actor, UUID encounterId, String metricCode, BigDecimal numericValue,
             String textValue, String unitCode, OffsetDateTime observedAt,
             ClinicalObservation.SourceType sourceType, String sourceRef,
             ClinicalObservation.Quality quality) {
+        actor.requireAnyRole("DOCTOR", "NURSE", "ADMIN");
         MedicalEncounter e = findEncounter(encounterId);
         if (!CAN_RECORD.contains(e.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
@@ -53,7 +54,7 @@ public class ObservationService {
                 sourceType != null ? sourceType : ClinicalObservation.SourceType.MANUAL,
                 sourceRef != null && !sourceRef.isBlank() ? sourceRef : "manual-entry",
                 quality != null ? quality : ClinicalObservation.Quality.VALID,
-                DEV_ACTOR));
+                actor.principalName()));
     }
 
     @Transactional(readOnly = true)
