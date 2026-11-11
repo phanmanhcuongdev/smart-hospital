@@ -8,8 +8,7 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import vn.edu.ptit.smarthms.system.repository.UserAccountRepository;
+import vn.edu.ptit.smarthms.system.service.SystemTestScenarioService;
 
 @Configuration
 public class FlywayConfiguration {
@@ -41,23 +40,7 @@ public class FlywayConfiguration {
     }
 
     @Bean
-    CommandLineRunner ensureDemoAccounts(Flyway flyway,
-                                         UserAccountRepository userAccountRepository,
-                                         PasswordEncoder passwordEncoder) {
-        return arguments -> {
-            userAccountRepository.findByUsername("admin").ifPresent(admin -> {
-                if (!passwordEncoder.matches("Admin@2026!", admin.getPasswordHash())) {
-                    admin.setPasswordHash(passwordEncoder.encode("Admin@2026!"));
-                    userAccountRepository.save(admin);
-                }
-            });
-
-            userAccountRepository.findByUsername("doctor1").ifPresent(doctor -> {
-                if (!passwordEncoder.matches("Doctor@2026!", doctor.getPasswordHash())) {
-                    doctor.setPasswordHash(passwordEncoder.encode("Doctor@2026!"));
-                    userAccountRepository.save(doctor);
-                }
-            });
-        };
+    CommandLineRunner ensureDemoAccounts(Flyway flyway, SystemTestScenarioService scenarioService) {
+        return arguments -> scenarioService.resetFixtures();
     }
 }

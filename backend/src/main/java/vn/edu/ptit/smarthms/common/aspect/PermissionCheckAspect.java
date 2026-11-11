@@ -16,6 +16,7 @@ import vn.edu.ptit.smarthms.common.error.ErrorCode;
 import vn.edu.ptit.smarthms.common.util.SecurityUtils;
 
 import java.util.Map;
+import java.util.UUID;
 
 @Aspect
 @Component
@@ -43,12 +44,13 @@ public class PermissionCheckAspect {
         boolean hasPermission = hasMatchingAuthority(auth, resource, action, scope);
         if (!hasPermission) {
             String username = SecurityUtils.getCurrentUsername();
+            String targetId = extractTargetId(pjp.getArgs());
             log.warn("Permission denied: user={} required={}:{}:{}", username, resource, action, scope);
             auditService.denied(
                     SecurityUtils.getCurrentUserId(),
                     username,
                     resource,
-                    null,
+                    targetId,
                     action,
                     Map.of("requiredScope", scope, "method", pjp.getSignature().toShortString())
             );
@@ -58,16 +60,30 @@ public class PermissionCheckAspect {
         return pjp.proceed();
     }
 
+    private String extractTargetId(Object[] args) {
+        if (args == null || args.length == 0 || args[0] == null) {
+            return null;
+        }
+        Object first = args[0];
+        if (first instanceof UUID || first instanceof String) {
+            return first.toString();
+        }
+        return null;
+    }
+
     private boolean hasMatchingAuthority(Authentication auth, String resource, String action, String scope) {
         String exactPermission = resource + ":" + action + ":" + scope;
+        String allScope = resource + ":" + action + ":ALL";
         String anyScope = resource + ":" + action + ":ANY";
 
         for (GrantedAuthority authority : auth.getAuthorities()) {
             String a = authority.getAuthority();
-            if (a.equals(exactPermission) || a.equals(anyScope)) {
+            if (a.equals(exactPermission) || a.equals(allScope) || a.equals(anyScope)) {
                 return true;
             }
-            // If scope is ANY, any matching resource:action:<any_scope> is sufficient
+            if ("OWN".equals(scope) && a.equals(resource + ":" + action + ":DEPT")) {
+                return true;
+            }
             if ("ANY".equals(scope) && a.startsWith(resource + ":" + action + ":")) {
                 return true;
             }

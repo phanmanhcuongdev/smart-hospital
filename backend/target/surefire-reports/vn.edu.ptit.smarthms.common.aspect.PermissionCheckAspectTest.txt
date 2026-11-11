@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: vn.edu.ptit.smarthms.common.aspect.PermissionCheckAspectTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.575 s -- in vn.edu.ptit.smarthms.common.aspect.PermissionCheckAspectTest

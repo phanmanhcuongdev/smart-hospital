@@ -25,6 +25,7 @@ C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarth
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\api\LoginResponse.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\api\MeResponse.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\api\SystemHealthController.java
+C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\api\SystemTestScenarioController.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\domain\AuditableEntity.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\domain\AuditEvent.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\domain\Permission.java
@@ -34,6 +35,8 @@ C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarth
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\domain\UserAccount.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\repository\AuditEventRepository.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\repository\RoleAssignmentRepository.java
+C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\repository\RoleRepository.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\repository\SessionRepository.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\repository\UserAccountRepository.java
 C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\service\SessionCleanupService.java
+C:\namtu\QLDAPM\BTL\smart-hospital-main\backend\src\main\java\vn\edu\ptit\smarthms\system\service\SystemTestScenarioService.java

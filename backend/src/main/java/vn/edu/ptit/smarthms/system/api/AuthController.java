@@ -58,10 +58,10 @@ public class AuthController {
             authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
-        } catch (BadCredentialsException ex) {
+        } catch (org.springframework.security.core.AuthenticationException | AppException ex) {
             log.warn("Login failed for user={}", request.username());
-            auditService.failure(null, request.username(), "SYS_USER", null, "LOGIN",
-                    Map.of("reason", "BAD_CREDENTIALS"));
+            auditService.failure(null, request.username(), "SYS_USER", request.username(), "LOGIN",
+                    Map.of("reason", "AUTH_CREDENTIALS_INVALID"));
             throw new AppException(ErrorCode.AUTH_CREDENTIALS_INVALID);
         }
 

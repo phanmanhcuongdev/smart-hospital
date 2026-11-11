@@ -14,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import vn.edu.ptit.smarthms.common.audit.AuditService;
 import vn.edu.ptit.smarthms.common.audit.RequestAuditFilter;
 import vn.edu.ptit.smarthms.common.error.ErrorCode;
 import vn.edu.ptit.smarthms.common.util.CorrelationIdHolder;
@@ -27,11 +28,14 @@ public class SecurityConfiguration {
 
     private final SmartHmsUserDetailsService userDetailsService;
     private final RequestAuditFilter requestAuditFilter;
+    private final AuditService auditService;
 
     public SecurityConfiguration(SmartHmsUserDetailsService userDetailsService,
-                                 RequestAuditFilter requestAuditFilter) {
+                                 RequestAuditFilter requestAuditFilter,
+                                 AuditService auditService) {
         this.userDetailsService = userDetailsService;
         this.requestAuditFilter = requestAuditFilter;
+        this.auditService = auditService;
     }
 
     @Bean
@@ -53,7 +57,7 @@ public class SecurityConfiguration {
 
     @Bean
     public BearerTokenFilter bearerTokenFilter() {
-        return new BearerTokenFilter(userDetailsService);
+        return new BearerTokenFilter(userDetailsService, auditService);
     }
 
     @Bean
@@ -65,16 +69,21 @@ public class SecurityConfiguration {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/api/v1/system/health",
-                                "/api/v1/auth/login"
+                                "/api/v1/auth/login",
+                                "/api/v1/sys/test-fixtures/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint((request, response, authException) -> {
-                            writeJsonError(response, ErrorCode.AUTH_TOKEN_INVALID);
+                            Object attr = request.getAttribute(BearerTokenFilter.AUTH_ERROR_ATTR);
+                            ErrorCode code = (attr instanceof ErrorCode ec) ? ec : ErrorCode.AUTH_TOKEN_INVALID;
+                            Object msgAttr = request.getAttribute(BearerTokenFilter.AUTH_ERROR_MSG_ATTR);
+                            String msg = (msgAttr instanceof String s && !s.isBlank()) ? s : code.getDefaultMessage();
+                            writeJsonError(response, code, msg);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            writeJsonError(response, ErrorCode.ACCESS_DENIED);
+                            writeJsonError(response, ErrorCode.ACCESS_DENIED, ErrorCode.ACCESS_DENIED.getDefaultMessage());
                         })
                 )
                 .addFilterBefore(requestAuditFilter, UsernamePasswordAuthenticationFilter.class)
@@ -85,17 +94,18 @@ public class SecurityConfiguration {
                 .build();
     }
 
-    private void writeJsonError(HttpServletResponse response, ErrorCode errorCode) throws java.io.IOException {
+    private void writeJsonError(HttpServletResponse response, ErrorCode errorCode, String message) throws java.io.IOException {
         String cid = CorrelationIdHolder.get();
         if (cid == null || cid.isBlank()) {
             cid = UUID.randomUUID().toString();
         }
         response.setStatus(errorCode.getHttpStatus());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        String safeMsg = message != null ? message.replace("\"", "\\\"") : errorCode.getDefaultMessage();
         String body = String.format(
                 "{\"code\":\"%s\",\"message\":\"%s\",\"correlationId\":\"%s\",\"timestamp\":\"%s\",\"details\":null}",
                 errorCode.getCode(),
-                errorCode.getDefaultMessage(),
+                safeMsg,
                 cid,
                 Instant.now().toString()
         );

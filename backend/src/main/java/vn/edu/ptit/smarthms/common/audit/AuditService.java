@@ -6,10 +6,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import vn.edu.ptit.smarthms.common.util.CorrelationIdHolder;
 import vn.edu.ptit.smarthms.system.domain.AuditEvent;
 import vn.edu.ptit.smarthms.system.repository.AuditEventRepository;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,9 +28,9 @@ public class AuditService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void recordEvent(UUID actorUserId, String actorRef, String targetType, String targetId,
-                            String action, String outcome, String changeRef,
-                            Map<String, Object> safeMetadata) {
+    public AuditEvent recordEvent(UUID actorUserId, String actorRef, String targetType, String targetId,
+                                  String action, String outcome, String changeRef,
+                                  Map<String, Object> safeMetadata) {
         AuditEvent event = new AuditEvent();
         event.setAuditId(UUID.randomUUID());
         event.setActorUserId(actorUserId);
@@ -39,10 +41,24 @@ public class AuditService {
         event.setOutcome((outcome != null && !outcome.isBlank()) ? outcome : "FAILURE");
         event.setChangeRef(changeRef);
         event.setHappenedAt(Instant.now());
-        if (safeMetadata != null && !safeMetadata.isEmpty()) {
-            event.setSafeMetadata(toJson(safeMetadata));
+
+        Map<String, Object> enrichedMeta = new HashMap<>();
+        if (safeMetadata != null) {
+            safeMetadata.forEach((k, v) -> {
+                String lowerKey = k.toLowerCase();
+                if (!lowerKey.contains("password") && !lowerKey.contains("secret") && !lowerKey.contains("token")) {
+                    enrichedMeta.put(k, v);
+                }
+            });
         }
-        auditEventRepository.save(event);
+        String cid = CorrelationIdHolder.get();
+        if (cid != null && !cid.isBlank()) {
+            enrichedMeta.putIfAbsent("correlationId", cid);
+        }
+        if (!enrichedMeta.isEmpty()) {
+            event.setSafeMetadata(toJson(enrichedMeta));
+        }
+        return auditEventRepository.save(event);
     }
 
     @Async
@@ -58,23 +74,31 @@ public class AuditService {
 
     public void success(UUID actorUserId, String actorRef, String targetType, String targetId,
                         String action, String changeRef, Map<String, Object> meta) {
-        recordEventAsync(actorUserId, actorRef, targetType, targetId, action, "SUCCESS", changeRef, meta);
+        try {
+            recordEvent(actorUserId, actorRef, targetType, targetId, action, "SUCCESS", changeRef, meta);
+        } catch (Exception e) {
+            log.error("Audit write failed: actor={} action={} target={}", actorRef, action, targetId, e);
+        }
     }
 
     public void denied(UUID actorUserId, String actorRef, String targetType, String targetId,
                        String action, Map<String, Object> meta) {
-        recordEventAsync(actorUserId, actorRef, targetType, targetId, action, "DENIED", null, meta);
+        try {
+            recordEvent(actorUserId, actorRef, targetType, targetId, action, "DENIED", null, meta);
+        } catch (Exception e) {
+            log.error("Audit write failed: actor={} action={} target={}", actorRef, action, targetId, e);
+        }
     }
 
     public void failure(UUID actorUserId, String actorRef, String targetType, String targetId,
                         String action, Map<String, Object> meta) {
-        recordEventAsync(actorUserId, actorRef, targetType, targetId, action, "FAILURE", null, meta);
+        try {
+            recordEvent(actorUserId, actorRef, targetType, targetId, action, "FAILURE", null, meta);
+        } catch (Exception e) {
+            log.error("Audit write failed: actor={} action={} target={}", actorRef, action, targetId, e);
+        }
     }
 
-    /**
-     * Simple Map-to-JSON serializer to avoid adding a Jackson dependency directly.
-     * Uses String.format for basic key-value pairs.
-     */
     private String toJson(Map<String, Object> map) {
         if (map == null || map.isEmpty()) {
             return "{}";

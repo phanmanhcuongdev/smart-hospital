@@ -76,6 +76,18 @@ public class TokenService {
     }
 
     /**
+     * Look up a session by raw token (including expired or revoked sessions) for detailed status inspection.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Session> findSessionByRawToken(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return Optional.empty();
+        }
+        String digest = hashToken(rawToken);
+        return sessionRepository.findByTokenDigest(digest);
+    }
+
+    /**
      * Validate a raw token: look up by digest, check not expired and not revoked.
      */
     @Transactional(readOnly = true)

@@ -59,19 +59,31 @@ public class SmartHmsUserDetailsService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public UserDetails loadUserByToken(String rawToken) {
+        Optional<Session> rawSessionOpt = tokenService.findSessionByRawToken(rawToken);
+        if (rawSessionOpt.isPresent()) {
+            Session s = rawSessionOpt.get();
+            if (s.isExpired()) {
+                throw new AppException(ErrorCode.AUTH_TOKEN_EXPIRED);
+            }
+            if (!s.isValid()) {
+                throw new AppException(ErrorCode.AUTH_TOKEN_INVALID, "Session has been revoked");
+            }
+            return buildUserDetailsFromSession(s);
+        }
+
         Optional<Session> sessionOpt = tokenService.validateToken(rawToken);
         if (sessionOpt.isEmpty()) {
             throw new AppException(ErrorCode.AUTH_TOKEN_INVALID);
         }
-        Session session = sessionOpt.get();
-        UserAccount account = session.getUser();
+        return buildUserDetailsFromSession(sessionOpt.get());
+    }
 
+    private UserDetails buildUserDetailsFromSession(Session session) {
+        UserAccount account = session.getUser();
         if (!"ACTIVE".equals(account.getAccountStatus())) {
             throw new AppException(ErrorCode.AUTH_ACCOUNT_DISABLED);
         }
-
         List<GrantedAuthority> authorities = buildAuthorities(account);
-
         return new SmartHmsUserDetails(account.getUsername(), account.getPasswordHash(),
                 account.getUserId(), authorities);
     }
@@ -83,9 +95,7 @@ public class SmartHmsUserDetailsService implements UserDetailsService {
 
         for (RoleAssignment assignment : activeAssignments) {
             Role role = assignment.getRole();
-            // Add role authority
             authorities.add(new SimpleGrantedAuthority(role.getRoleCode()));
-            // Add permission authorities
             for (Permission permission : role.getPermissions()) {
                 authorities.add(new SimpleGrantedAuthority(permission.toAuthorityString()));
             }

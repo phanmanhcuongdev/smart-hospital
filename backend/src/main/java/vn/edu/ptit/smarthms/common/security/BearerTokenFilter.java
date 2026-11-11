@@ -10,8 +10,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
+import vn.edu.ptit.smarthms.common.audit.AuditService;
+import vn.edu.ptit.smarthms.common.error.AppException;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Reads the "Authorization: Bearer <token>" header and authenticates the request
@@ -19,13 +22,21 @@ import java.io.IOException;
  */
 public class BearerTokenFilter extends OncePerRequestFilter {
 
+    public static final String AUTH_ERROR_ATTR = "SMARTHMS_AUTH_ERROR_CODE";
+    public static final String AUTH_ERROR_MSG_ATTR = "SMARTHMS_AUTH_ERROR_MSG";
     private static final Logger log = LoggerFactory.getLogger(BearerTokenFilter.class);
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final SmartHmsUserDetailsService userDetailsService;
+    private final AuditService auditService;
 
     public BearerTokenFilter(SmartHmsUserDetailsService userDetailsService) {
+        this(userDetailsService, null);
+    }
+
+    public BearerTokenFilter(SmartHmsUserDetailsService userDetailsService, AuditService auditService) {
         this.userDetailsService = userDetailsService;
+        this.auditService = auditService;
     }
 
     @Override
@@ -46,9 +57,22 @@ public class BearerTokenFilter extends OncePerRequestFilter {
                 }
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (AppException ex) {
+                log.debug("Token validation rejected with code={}", ex.getErrorCode().getCode());
+                request.setAttribute(AUTH_ERROR_ATTR, ex.getErrorCode());
+                request.setAttribute(AUTH_ERROR_MSG_ATTR, ex.getMessage());
+                if (auditService != null) {
+                    auditService.denied(
+                            null,
+                            "session_bearer",
+                            "SYS_SESSION",
+                            request.getRequestURI(),
+                            "AUTHENTICATE_TOKEN",
+                            Map.of("reason", ex.getErrorCode().getCode(), "path", request.getRequestURI())
+                    );
+                }
             } catch (Exception ex) {
                 log.debug("Token validation failed: {}", ex.getMessage());
-                // Don't set authentication — security config will reject unauthenticated requests
             }
         }
 

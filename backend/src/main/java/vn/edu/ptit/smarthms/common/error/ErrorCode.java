@@ -11,7 +11,9 @@ public enum ErrorCode {
     ACCESS_DENIED(403, "ACCESS_DENIED", "Insufficient permissions"),
     RESOURCE_NOT_FOUND(404, "RESOURCE_NOT_FOUND", "Resource not found"),
     CONFLICT(409, "CONFLICT", "Resource conflict"),
+    AUDIT_IMMUTABLE(409, "AUDIT_IMMUTABLE", "Audit events are append-only and cannot be modified or deleted"),
     VALIDATION_FAILED(422, "VALIDATION_FAILED", "Validation failed"),
+    INTEGRATION_DELIVERY_FAILED(503, "INTEGRATION_DELIVERY_FAILED", "External adapter delivery failed or timed out"),
     INTERNAL_ERROR(500, "INTERNAL_ERROR", "An unexpected error occurred");
 
     private final int httpStatus;
