@@ -42,6 +42,11 @@ function getAuthHeaders(): Record<string, string> {
     const raw = sessionStorage.getItem("smarthms-auth");
     if (raw) {
       const parsed = JSON.parse(raw);
+      if (parsed?.token) {
+        return {
+          Authorization: `Bearer ${parsed.token}`,
+        };
+      }
       if (parsed?.username && parsed?.password) {
         return {
           Authorization: "Basic " + btoa(`${parsed.username}:${parsed.password}`),

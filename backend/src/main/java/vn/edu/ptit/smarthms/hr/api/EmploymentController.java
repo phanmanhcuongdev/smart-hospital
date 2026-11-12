@@ -33,7 +33,7 @@ public class EmploymentController {
     }
 
     @PostMapping("/employees/{employeeId}/transfers")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<AssignmentResponse> createTransfer(Authentication authentication,
             @PathVariable UUID employeeId, @Valid @RequestBody CreateTransferRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)

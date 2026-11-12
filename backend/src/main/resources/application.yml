@@ -27,3 +27,7 @@ logging:
   level:
     root: INFO
     vn.edu.ptit.smarthms: DEBUG
+
+app:
+  security:
+    session-ttl-hours: ${SMARTHMS_SESSION_TTL_HOURS:8}

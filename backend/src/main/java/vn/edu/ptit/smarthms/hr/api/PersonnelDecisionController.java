@@ -39,7 +39,7 @@ public class PersonnelDecisionController {
     }
 
     @PostMapping("/employees/{employeeId}/decisions")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<DecisionResponse> createDecision(Authentication authentication,
             @PathVariable UUID employeeId, @Valid @RequestBody CreateDecisionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,7 +47,7 @@ public class PersonnelDecisionController {
     }
 
     @GetMapping("/decisions")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<DecisionResponse> listDecisions(Authentication authentication,
             @RequestParam(required = false) UUID employeeId,
             @RequestParam(required = false) String status) {
@@ -55,40 +55,40 @@ public class PersonnelDecisionController {
     }
 
     @GetMapping("/decisions/{decisionId}")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public DecisionResponse getDecision(Authentication authentication,
             @PathVariable UUID decisionId) {
         return decisions.getDecision(actor(authentication), decisionId);
     }
 
     @PostMapping("/decisions/{decisionId}/approve")
-    @PreAuthorize("hasRole('HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_APPROVER', 'ADMIN')")
     public DecisionResponse approveDecision(Authentication authentication,
             @PathVariable UUID decisionId) {
         return decisions.approveDecision(actor(authentication), decisionId);
     }
 
     @PostMapping("/decisions/{decisionId}/revoke")
-    @PreAuthorize("hasRole('HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_APPROVER', 'ADMIN')")
     public DecisionResponse revokeDecision(Authentication authentication,
             @PathVariable UUID decisionId) {
         return decisions.revokeDecision(actor(authentication), decisionId);
     }
 
     @PostMapping("/decisions/apply-due")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<DecisionResponse> applyDueDecisions(Authentication authentication) {
         return decisions.applyDueDecisions(actor(authentication));
     }
 
   @PutMapping("/decisions/{decisionId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public DecisionResponse updateDecision(Authentication authentication, @PathVariable UUID decisionId, @Valid @RequestBody UpdateDecisionRequest request) {
     return decisions.updateDecision(actor(authentication), decisionId, request);
   }
 
   @DeleteMapping("/decisions/{decisionId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public ResponseEntity<Void> deleteDecision(Authentication authentication, @PathVariable UUID decisionId) {
     decisions.deleteDecision(actor(authentication), decisionId);
     return ResponseEntity.noContent().build();

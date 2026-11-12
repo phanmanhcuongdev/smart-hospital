@@ -9,7 +9,7 @@ const ADMIN_AUTH = "Basic " + btoa("demo-admin:demo");
 function stubFetch() {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: unknown, init?: { headers?: Record<string, string> }) => {
+    vi.fn(async (url: unknown, init?: { headers?: Record<string, string>; body?: BodyInit | null }) => {
       const u = String(url);
       const auth = init?.headers?.Authorization ?? "";
       const body = (status: number, payload: unknown) => ({
@@ -21,8 +21,35 @@ function stubFetch() {
       if (u.includes("/api/v1/system/health")) {
         return body(200, { status: "UP" });
       }
+      if (u.includes("/api/v1/auth/login")) {
+        let username = "admin";
+        try {
+          const parsed = JSON.parse(String(init?.body));
+          if (parsed?.username) username = parsed.username;
+        } catch {
+          // ignore
+        }
+        const roles =
+          username === "admin" || username === "demo-admin"
+            ? ["ROLE_ADMIN"]
+            : username === "demo-hr"
+            ? ["ROLE_HR_SPECIALIST"]
+            : username === "demo-hr-approver"
+            ? ["ROLE_HR_APPROVER"]
+            : ["ROLE_DOCTOR"];
+        return body(200, {
+          token: "token-" + username,
+          expiresAt: new Date(Date.now() + 86400000).toISOString(),
+          username,
+          roles,
+        });
+      }
       if (u.includes("/api/v1/hr/departments")) {
-        return auth === HR_AUTH || auth === ADMIN_AUTH
+        return auth === HR_AUTH ||
+          auth === ADMIN_AUTH ||
+          auth.includes("token-demo-hr") ||
+          auth.includes("token-admin") ||
+          auth.includes("token-demo-admin")
           ? body(200, [])
           : body(403, { code: "FORBIDDEN", message: "Forbidden" });
       }

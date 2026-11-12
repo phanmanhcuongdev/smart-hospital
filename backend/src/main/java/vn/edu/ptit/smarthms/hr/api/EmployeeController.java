@@ -41,7 +41,7 @@ public class EmployeeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<EmployeeResponse> createEmployee(Authentication authentication,
             @Valid @RequestBody CreateEmployeeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -49,7 +49,7 @@ public class EmployeeController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<EmployeeResponse> searchEmployees(Authentication authentication,
             @RequestParam(required = false) UUID departmentId,
             @RequestParam(required = false) String status,
@@ -59,35 +59,35 @@ public class EmployeeController {
     }
 
     @GetMapping("/{employeeId}")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public EmployeeResponse getEmployee(Authentication authentication,
             @PathVariable UUID employeeId) {
         return employees.getEmployee(actor(authentication), employeeId);
     }
 
     @PutMapping("/{employeeId}")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public EmployeeResponse updateEmployee(Authentication authentication,
             @PathVariable UUID employeeId, @Valid @RequestBody UpdateEmployeeRequest request) {
         return employees.updateEmployee(actor(authentication), employeeId, request);
     }
 
     @GetMapping("/{employeeId}/assignments")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<AssignmentResponse> listAssignments(Authentication authentication,
             @PathVariable UUID employeeId) {
         return employees.listAssignments(actor(authentication), employeeId);
     }
 
     @GetMapping("/{employeeId}/status-history")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<EmployeeStatusHistoryResponse> listStatusHistory(Authentication authentication,
             @PathVariable UUID employeeId) {
         return employees.listStatusHistory(actor(authentication), employeeId);
     }
 
   @DeleteMapping("/{employeeId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public ResponseEntity<Void> deleteEmployee(Authentication authentication, @PathVariable UUID employeeId) {
     employees.deleteEmployee(actor(authentication), employeeId);
     return ResponseEntity.noContent().build();
