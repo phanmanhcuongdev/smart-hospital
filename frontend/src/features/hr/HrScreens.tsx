@@ -27,11 +27,11 @@ function EmployeeList({ auth, go }: { auth: Auth; go: (v: HrView) => void }) {
   const employees = useAsync(() => searchEmployees(auth, query), [query, auth.username]);
   const [showForm, setShowForm] = useState(false);
   useEffect(() => {
-    const open = () => { if (auth.role === "HR_SPECIALIST") setShowForm(true); };
+    const open = () => { if (auth.role === "HR_SPECIALIST" || auth.role === "ADMIN") setShowForm(true); };
     window.addEventListener("smarthms:primary-action", open);
     return () => window.removeEventListener("smarthms:primary-action", open);
   }, [auth.role]);
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   function applyFilters(e: FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -303,7 +303,7 @@ function EmployeeDetail({ auth, employeeId, tab, go }: { auth: Auth; employeeId:
       window.alert(errText(e));
     }
   }
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   if (employee.loading && employee.data === null) {
     return <p role="status">{"Đang tải nhân viên..."}</p>;
   }
@@ -377,7 +377,7 @@ function CertificationsPanel({ auth, employeeId }: { auth: Auth; employeeId: str
   const [editing, setEditing] = useState<Certification | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   function startEdit(c: Certification) {
     setEditing(c);
     set("credentialType", c.credentialType);
@@ -522,8 +522,8 @@ function DecisionsPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const canHr = auth.role === "HR_SPECIALIST";
-  const canApprove = auth.role === "HR_APPROVER";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
+  const canApprove = auth.role === "HR_APPROVER" || auth.role === "ADMIN";
   const [editing, setEditing] = useState<Decision | null>(null);
   function startEdit(d: Decision) {
     setEditing(d);
@@ -686,7 +686,7 @@ function TransfersPanel({ auth, employeeId }: { auth: Auth; employeeId: string }
   const [form, set, reset] = useForm({ departmentId: "", jobTitle: "", roleProfileId: "", effectiveFrom: new Date().toISOString().slice(0, 16), decisionRef: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -833,7 +833,7 @@ function DepartmentList({ auth }: { auth: Auth }) {
   const [editing, setEditing] = useState<Department | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   useEffect(() => {
     const focusForm = () => {
       const form = document.getElementById("department-form");
@@ -967,7 +967,7 @@ function RoleProfileList({ auth }: { auth: Auth }) {
   const [form, set, reset] = useForm({ titleName: "", professionalGroup: "", qualification: "", description: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canHr = auth.role === "HR_SPECIALIST";
+  const canHr = auth.role === "HR_SPECIALIST" || auth.role === "ADMIN";
   const [editing, setEditing] = useState<RoleProfile | null>(null);
   function startEdit(r: RoleProfile) {
     setEditing(r);

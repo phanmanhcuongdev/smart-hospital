@@ -19,7 +19,11 @@ public final class ActorResolver {
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             String role = authority.getAuthority();
             if (role.startsWith("ROLE_")) {
-                roles.add(role.substring("ROLE_".length()));
+                String stripped = role.substring("ROLE_".length());
+                roles.add(stripped);
+                if ("RECEPTIONIST".equals(stripped)) {
+                    roles.add("RECEPTION");
+                }
             } else {
                 roles.add(role);
             }

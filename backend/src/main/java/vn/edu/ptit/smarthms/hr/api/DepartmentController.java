@@ -39,7 +39,7 @@ public class DepartmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<DepartmentResponse> createDepartment(Authentication authentication,
             @Valid @RequestBody CreateDepartmentRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,28 +47,28 @@ public class DepartmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<DepartmentResponse> listDepartments(Authentication authentication,
             @RequestParam(required = false) Boolean active) {
         return departments.listDepartments(actor(authentication), active);
     }
 
     @GetMapping("/{departmentId}")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public DepartmentResponse getDepartment(Authentication authentication,
             @PathVariable UUID departmentId) {
         return departments.getDepartment(actor(authentication), departmentId);
     }
 
     @PutMapping("/{departmentId}")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public DepartmentResponse updateDepartment(Authentication authentication,
             @PathVariable UUID departmentId, @Valid @RequestBody UpdateDepartmentRequest request) {
         return departments.updateDepartment(actor(authentication), departmentId, request);
     }
 
   @DeleteMapping("/{departmentId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public ResponseEntity<Void> deleteDepartment(Authentication authentication, @PathVariable UUID departmentId) {
     departments.deleteDepartment(actor(authentication), departmentId);
     return ResponseEntity.noContent().build();

@@ -38,7 +38,7 @@ public class RoleProfileController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<RoleProfileResponse> createRoleProfile(Authentication authentication,
             @Valid @RequestBody CreateRoleProfileRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -46,26 +46,26 @@ public class RoleProfileController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<RoleProfileResponse> listRoleProfiles(Authentication authentication) {
         return roleProfiles.listRoleProfiles(actor(authentication));
     }
 
     @GetMapping("/{roleProfileId}")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public RoleProfileResponse getRoleProfile(Authentication authentication,
             @PathVariable UUID roleProfileId) {
         return roleProfiles.getRoleProfile(actor(authentication), roleProfileId);
     }
 
   @PutMapping("/{roleProfileId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public RoleProfileResponse updateRoleProfile(Authentication authentication, @PathVariable UUID roleProfileId, @Valid @RequestBody UpdateRoleProfileRequest request) {
     return roleProfiles.updateRoleProfile(actor(authentication), roleProfileId, request);
   }
 
   @DeleteMapping("/{roleProfileId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public ResponseEntity<Void> deleteRoleProfile(Authentication authentication, @PathVariable UUID roleProfileId) {
     roleProfiles.deleteRoleProfile(actor(authentication), roleProfileId);
     return ResponseEntity.noContent().build();

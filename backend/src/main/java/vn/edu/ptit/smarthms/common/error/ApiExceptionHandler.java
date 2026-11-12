@@ -85,6 +85,12 @@ public class ApiExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage());
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
+        log.warn("Handled UnauthorizedException [code={}]: {}", ex.getCode(), ex.getMessage());
+        return error(HttpStatus.UNAUTHORIZED, ex.getCode(), ex.getMessage());
+    }
+
     @ExceptionHandler({ForbiddenException.class, AccessDeniedException.class})
     public ResponseEntity<Map<String, Object>> handleForbidden(Exception ex) {
         log.warn("Handled AccessDenied / ForbiddenException: {}", ex.getMessage());

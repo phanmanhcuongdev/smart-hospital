@@ -1,9 +1,35 @@
 import { useEffect, useState } from "react";
 import { statusLabel } from "./lib/labels";
 import type { FormEvent } from "react";
-import { ApiError, health, listDecisions, listDepartments, listRoleProfiles, searchEmployees } from "./lib/api";
-import type { Auth, Decision, Department, Employee } from "./lib/api";
-import { DEMO_USERS, canAccessEmr, canAccessHr, demoUser, isHr } from "./auth/auth";
+import {
+  ApiError,
+  health,
+  listDecisions,
+  listDepartments,
+  listRoleProfiles,
+  searchEmployees,
+  login,
+  logout,
+  getMe,
+  listAuditEvents,
+} from "./lib/api";
+import type {
+  Auth,
+  Decision,
+  Department,
+  Employee,
+  MeResponse,
+  AuditEventItem,
+} from "./lib/api";
+import {
+  DEMO_USERS,
+  canAccessEmr,
+  canAccessHr,
+  demoUser,
+  isHr,
+  resolvePrimaryRole,
+  resolveUserLabel,
+} from "./auth/auth";
 import { HrScreens } from "./features/hr/HrScreens";
 import type { HrView } from "./features/hr/HrScreens";
 import { EmrApp } from "./emr/EmrApp";
@@ -31,11 +57,22 @@ function loadSession(): Auth | null {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw === null) return null;
     const parsed = JSON.parse(raw) as Auth;
-    if (typeof parsed !== "object" || parsed === null) return null;
-    const known = demoUser(parsed.username);
-    if (known === undefined) return null;
-    if (parsed.password !== "demo") return null;
-    return { username: known.username, password: parsed.password, role: known.role, label: known.label };
+    if (typeof parsed !== "object" || parsed === null || !parsed.username) return null;
+    if (parsed.expiresAt && new Date(parsed.expiresAt).getTime() <= Date.now()) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    const role = parsed.role || resolvePrimaryRole(parsed.roles, parsed.username);
+    const label = parsed.label || resolveUserLabel(parsed.username, role);
+    return {
+      username: parsed.username,
+      token: parsed.token,
+      expiresAt: parsed.expiresAt,
+      roles: parsed.roles,
+      password: parsed.password,
+      role,
+      label,
+    };
   } catch {
     return null;
   }
@@ -101,6 +138,9 @@ export function App() {
   };
 
   const signOut = () => {
+    if (auth) {
+      void logout(auth);
+    }
     setAuth(null);
     sessionStorage.removeItem(SESSION_KEY);
     window.location.hash = "";
@@ -398,7 +438,7 @@ function Overview({ auth, healthStatus, go }: { auth: Auth; healthStatus: string
       )}
 
       {canAccessHr(auth.role) && (
-        <div>
+        <div style={{ marginBottom: "1.5rem" }}>
           <h4 style={{ margin: "0.5rem 0" }}>{"Quyết định nhân sự chờ duyệt"}</h4>
           {pending.length === 0 && <p className="muted">{"Không có quyết định chờ duyệt nào."}</p>}
           {pending.slice(0, 5).map((d) => (
@@ -409,52 +449,225 @@ function Overview({ auth, healthStatus, go }: { auth: Auth; healthStatus: string
           ))}
         </div>
       )}
+
+      <SessionAndAuditInspector auth={auth} />
     </section>
+  );
+}
+
+function SessionAndAuditInspector({ auth }: { auth: Auth }) {
+  const [me, setMe] = useState<MeResponse | null>(null);
+  const [auditList, setAuditList] = useState<AuditEventItem[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const fetchMe = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const data = await getMe(auth);
+      setMe(data);
+    } catch (e: unknown) {
+      setErr(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const fetchAudit = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const events = await listAuditEvents(auth);
+      setAuditList(events);
+    } catch (e: unknown) {
+      setErr(errText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: "2rem" }}>
+      <h3>{"Thông tin phiên & Bảo mật (RBAC & Audit Trail)"}</h3>
+      <div className="card" style={{ marginBottom: "1rem" }}>
+        <h4>{"Phiên đăng nhập hiện tại"}</h4>
+        <div className="token-box">
+          <div><strong>Người dùng:</strong> {auth.username} ({auth.label})</div>
+          {auth.token && (
+            <div><strong>Bearer Token:</strong> <code>{auth.token}</code></div>
+          )}
+          {auth.expiresAt && (
+            <div><strong>Hết hạn lúc:</strong> {new Date(auth.expiresAt).toLocaleString()}</div>
+          )}
+        </div>
+        <div>
+          <strong>Vai trò (Roles):</strong>
+          <div className="badge-list">
+            {(auth.roles && auth.roles.length > 0 ? auth.roles : [auth.role]).map((r) => (
+              <span key={r} className="badge badge-role">{r}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>
+          <button type="button" className="btn btn-small" disabled={busy} onClick={() => void fetchMe()}>
+            {"Kiểm tra quyền (/api/v1/auth/me)"}
+          </button>
+          <button type="button" className="btn btn-small" disabled={busy} onClick={() => void fetchAudit()}>
+            {"Xem nhật ký Audit (/api/v1/audit/events)"}
+          </button>
+        </div>
+        {err && <div style={{ marginTop: "0.5rem" }}><ErrorBanner error={err} /></div>}
+        {me && (
+          <div style={{ marginTop: "0.75rem" }}>
+            <strong>Quyền chi tiết từ máy chủ ({me.permissions.length} quyền):</strong>
+            <div className="badge-list">
+              {me.permissions.map((p) => (
+                <span key={p} className="badge badge-perm">{p}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {auditList.length > 0 && (
+        <div className="card">
+          <h4>{"Nhật ký Audit Hệ thống gần đây"}</h4>
+          <div style={{ overflowX: "auto" }}>
+            <table className="audit-table">
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Actor</th>
+                  <th>Hành động</th>
+                  <th>Đối tượng</th>
+                  <th>Kết quả</th>
+                  <th>Metadata</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditList.map((item) => (
+                  <tr key={item.auditId}>
+                    <td>{new Date(item.happenedAt).toLocaleTimeString()}</td>
+                    <td>{item.actorRef}</td>
+                    <td><code>{item.action}</code></td>
+                    <td>{item.targetType} ({item.targetId})</td>
+                    <td className={`outcome-${item.outcome}`}>{item.outcome}</td>
+                    <td><code>{item.safeMetadata ?? "-"}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 function LoginForm({ onSignIn }: { onSignIn: (next: Auth) => void }) {
   const [username, setUsername] = useState(DEMO_USERS[0].username);
-  const [password, setPassword] = useState("demo");
+  const [password, setPassword] = useState(DEMO_USERS[0].defaultSecret);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const selectUser = (uName: string) => {
+    setUsername(uName);
+    const u = demoUser(uName);
+    if (u) {
+      setPassword(u.defaultSecret);
+    }
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const user = demoUser(username);
-    if (user === undefined) { setError("Không tìm thấy người dùng demo."); return; }
+    if (!username.trim()) {
+      setError("Vui lòng nhập tài khoản.");
+      return;
+    }
     setBusy(true);
     setError(null);
-    const candidate: Auth = { username: user.username, password, role: user.role, label: user.label };
     try {
-      await listDepartments(candidate);
-      onSignIn(candidate);
+      const res = await login(username.trim(), password);
+      const role = resolvePrimaryRole(res.roles, res.username);
+      const label = resolveUserLabel(res.username, role);
+      const authUser: Auth = {
+        username: res.username,
+        token: res.token,
+        expiresAt: res.expiresAt,
+        roles: res.roles,
+        role,
+        label,
+      };
+      onSignIn(authUser);
     } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 401) setError("Sai mật khẩu. Mật khẩu demo là mật khẩu đã cấu hình trong SMARTHMS_DEMO_PASSWORD (mặc định là demo).");
-      else if (err instanceof ApiError && err.status === 403) onSignIn(candidate);
-      else setError(errText(err));
-    } finally { setBusy(false); }
+      // Fallback in case of mock/test or non-token environment
+      if (err instanceof ApiError && (err.status === 404 || err.status === 0 || err.status === 403)) {
+        const u = demoUser(username);
+        const role = u?.role ?? "DOCTOR";
+        const candidate: Auth = {
+          username: username.trim(),
+          password,
+          role,
+          label: u?.label ?? `${username} (${role})`,
+        };
+        try {
+          await listDepartments(candidate);
+          onSignIn(candidate);
+          return;
+        } catch (inner: unknown) {
+          if (inner instanceof ApiError && inner.status === 403) {
+            onSignIn(candidate);
+            return;
+          }
+        }
+      }
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Sai tài khoản hoặc mật khẩu.");
+      } else {
+        setError(errText(err));
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <form onSubmit={submit}>
-      <h2>{"Đăng nhập (demo)"}</h2>
+      <h2>{"Đăng nhập"}</h2>
       <Field label={"Người dùng demo"}>
-        <select value={username} onChange={(e) => setUsername(e.target.value)}>
+        <select value={username} onChange={(e) => selectUser(e.target.value)}>
           {DEMO_USERS.map((u) => (
             <option key={u.username} value={u.username}>{u.label} ({statusLabel(u.role)})</option>
           ))}
         </select>
       </Field>
+      <Field label={"Tài khoản"}>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Nhập tài khoản"
+          autoComplete="username"
+        />
+      </Field>
       <Field label={"Mật khẩu"}>
-        <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Nhập mật khẩu"
+        />
       </Field>
       {error !== null && <ErrorBanner error={error} />}
       <SubmitRow busy={busy} label={"Đăng nhập"} />
-      <p><strong>{"Tài khoản demo:"}</strong>"demo" {"là mật khẩu cho mọi tài khoản."}</p>
+      <p><strong>{"Tài khoản mẫu:"}</strong></p>
       <ul className="demo-list">
         {DEMO_USERS.map((u) => (
-          <li key={u.username}><strong>{u.username}</strong> — {u.label} — {statusLabel(u.role)}</li>
+          <li key={u.username}>
+            <strong>{u.username}</strong> / <code>{u.defaultSecret}</code> — {u.label}
+          </li>
         ))}
       </ul>
     </form>

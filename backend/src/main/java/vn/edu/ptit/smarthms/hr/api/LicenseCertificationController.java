@@ -38,7 +38,7 @@ public class LicenseCertificationController {
     }
 
     @PostMapping("/employees/{employeeId}/certifications")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public ResponseEntity<CertificationResponse> addCertification(Authentication authentication,
             @PathVariable UUID employeeId, @Valid @RequestBody CreateCertificationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -46,21 +46,21 @@ public class LicenseCertificationController {
     }
 
     @GetMapping("/employees/{employeeId}/certifications")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public List<CertificationResponse> listCertifications(Authentication authentication,
             @PathVariable UUID employeeId) {
         return certifications.listCertifications(actor(authentication), employeeId);
     }
 
     @GetMapping("/certifications/{certificationId}")
-    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'HR_APPROVER', 'ADMIN')")
     public CertificationResponse getCertification(Authentication authentication,
             @PathVariable UUID certificationId) {
         return certifications.getCertification(actor(authentication), certificationId);
     }
 
     @PutMapping("/certifications/{certificationId}")
-    @PreAuthorize("hasRole('HR_SPECIALIST')")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
     public CertificationResponse updateCertification(Authentication authentication,
             @PathVariable UUID certificationId,
             @Valid @RequestBody UpdateCertificationRequest request) {
@@ -68,7 +68,7 @@ public class LicenseCertificationController {
     }
 
   @DeleteMapping("/certifications/{certificationId}")
-  @PreAuthorize("hasRole('HR_SPECIALIST')")
+  @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN')")
   public ResponseEntity<Void> deleteCertification(Authentication authentication, @PathVariable UUID certificationId) {
     certifications.deleteCertification(actor(authentication), certificationId);
     return ResponseEntity.noContent().build();

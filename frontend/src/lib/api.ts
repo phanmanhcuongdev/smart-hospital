@@ -1,13 +1,41 @@
 import type { Role } from "../auth/auth";
 
-// Authenticated API client for the SmartHMS backend. All requests use HTTP
-// Basic with the demo user credentials (demo environment only).
+// Authenticated API client for the SmartHMS backend.
+// Uses Opaque Bearer Tokens issued by POST /api/v1/auth/login (merged from phung-nam).
 
 export interface Auth {
   username: string;
-  password: string;
+  token?: string;
+  expiresAt?: string;
+  roles?: string[];
+  password?: string;
   role: Role;
   label: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  expiresAt: string;
+  username: string;
+  roles: string[];
+}
+
+export interface MeResponse {
+  username: string;
+  roles: string[];
+  permissions: string[];
+}
+
+export interface AuditEventItem {
+  auditId: string;
+  actorUserId: string | null;
+  actorRef: string;
+  targetType: string;
+  targetId: string;
+  action: string;
+  outcome: string;
+  happenedAt: string;
+  safeMetadata: string | null;
 }
 
 export class ApiError extends Error {
@@ -21,11 +49,11 @@ export class ApiError extends Error {
 }
 
 export function friendlyMessage(status: number, message: string): string {
-  if (status === 400) {
+  if (status === 400 || status === 422) {
     return "Validation failed: " + message;
   }
   if (status === 401) {
-    return "Sign-in failed: wrong demo username or password.";
+    return "Sign-in failed: wrong username/password or expired session.";
   }
   if (status === 403) {
     return "Not allowed: " + message;
@@ -48,10 +76,61 @@ function apiUrl(path: string): string {
   return base + path;
 }
 
+export function buildAuthorizationHeader(auth: Pick<Auth, "token" | "username" | "password">): string | undefined {
+  if (auth.token) {
+    return "Bearer " + auth.token;
+  }
+  if (auth.username && auth.password) {
+    return "Basic " + btoa(auth.username + ":" + auth.password);
+  }
+  return undefined;
+}
+
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(apiUrl("/api/v1/auth/login"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      data = text;
+    }
+  }
+  if (res.ok && data && typeof data === "object") {
+    return data as LoginResponse;
+  }
+  const obj = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  const message = typeof obj.message === "string" ? obj.message : res.statusText || "Login failed";
+  const code = typeof obj.code === "string" ? obj.code : "AUTH_CREDENTIALS_INVALID";
+  throw new ApiError(res.status, code, friendlyMessage(res.status, message));
+}
+
+export async function logout(auth: Auth): Promise<void> {
+  if (!auth.token) return;
+  try {
+    await fetch(apiUrl("/api/v1/auth/logout"), {
+      method: "POST",
+      headers: { Authorization: "Bearer " + auth.token },
+    });
+  } catch {
+    // Ignore network errors on sign-out; local session is cleared regardless.
+  }
+}
+
+export const getMe = (a: Auth): Promise<MeResponse> => api(a, "GET", "/api/v1/auth/me");
+export const listAuditEvents = (a: Auth): Promise<AuditEventItem[]> => api(a, "GET", "/api/v1/audit/events");
+
 export async function api<T>(auth: Auth, method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = {
-    Authorization: "Basic " + btoa(auth.username + ":" + auth.password),
-  };
+  const headers: Record<string, string> = {};
+  const authHeader = buildAuthorizationHeader(auth);
+  if (authHeader) {
+    headers.Authorization = authHeader;
+  }
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
   }
@@ -134,29 +213,29 @@ export const createTransfer = (a: Auth, id: string, b: TransferBody): Promise<As
 export const getEmployee = (a: Auth, id: string): Promise<Employee> => api(a, "GET", "/api/v1/hr/employees/" + id);
 
 export async function deleteDepartment(auth: Auth, id: string) {
-  await api<void>(auth, "DELETE", `/hr/departments/${id}`);
+  await api<void>(auth, "DELETE", `/api/v1/hr/departments/${id}`);
 }
 
 export async function deleteEmployee(auth: Auth, id: string) {
-  await api<void>(auth, "DELETE", `/hr/employees/${id}`);
+  await api<void>(auth, "DELETE", `/api/v1/hr/employees/${id}`);
 }
 
 export async function deleteCertification(auth: Auth, id: string) {
-  await api<void>(auth, "DELETE", `/hr/certifications/${id}`);
+  await api<void>(auth, "DELETE", `/api/v1/hr/certifications/${id}`);
 }
 
 export async function updateDecision(auth: Auth, id: string, body: { decisionRef?: string; decisionType?: string; effectiveAt?: string; reason?: string | null }) {
-  return await api<Decision>(auth, "PUT", `/hr/decisions/${id}`, body);
+  return await api<Decision>(auth, "PUT", `/api/v1/hr/decisions/${id}`, body);
 }
 
 export async function deleteDecision(auth: Auth, id: string) {
-  await api<void>(auth, "DELETE", `/hr/decisions/${id}`);
+  await api<void>(auth, "DELETE", `/api/v1/hr/decisions/${id}`);
 }
 
 export async function updateRoleProfile(auth: Auth, id: string, body: { titleName?: string; professionalGroup?: string | null; qualification?: string | null; description?: string | null }) {
-  return await api<RoleProfile>(auth, "PUT", `/hr/role-profiles/${id}`, body);
+  return await api<RoleProfile>(auth, "PUT", `/api/v1/hr/role-profiles/${id}`, body);
 }
 
 export async function deleteRoleProfile(auth: Auth, id: string) {
-  await api<void>(auth, "DELETE", `/hr/role-profiles/${id}`);
+  await api<void>(auth, "DELETE", `/api/v1/hr/role-profiles/${id}`);
 }
