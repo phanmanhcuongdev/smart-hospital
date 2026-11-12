@@ -11,4 +11,14 @@ public final class CorrelationContext {
         String corr = MDC.get(CorrelationLoggingFilter.CORRELATION_ID_MDC_KEY);
         return (corr != null && !corr.isBlank()) ? corr : UUID.randomUUID().toString();
     }
+
+    public static void setCorrelationId(String correlationId) {
+        if (correlationId != null) {
+            MDC.put(CorrelationLoggingFilter.CORRELATION_ID_MDC_KEY, correlationId);
+        }
+    }
+
+    public static void clear() {
+        MDC.remove(CorrelationLoggingFilter.CORRELATION_ID_MDC_KEY);
+    }
 }

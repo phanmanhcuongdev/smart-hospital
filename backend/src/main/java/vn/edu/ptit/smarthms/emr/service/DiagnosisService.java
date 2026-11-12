@@ -3,6 +3,7 @@ package vn.edu.ptit.smarthms.emr.service;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import vn.edu.ptit.smarthms.emr.domain.DiagnosisStatus;
 import vn.edu.ptit.smarthms.emr.domain.DiagnosisType;
 import vn.edu.ptit.smarthms.emr.domain.EncounterStatus;
 import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
+import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 import vn.edu.ptit.smarthms.emr.repository.DiagnosisRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 
@@ -26,10 +28,18 @@ public class DiagnosisService {
 
     private final DiagnosisRepository diagnoses;
     private final MedicalEncounterRepository encounters;
+    private final ReferenceLookupPort lookup;
 
-    public DiagnosisService(DiagnosisRepository diagnoses, MedicalEncounterRepository encounters) {
+    @Autowired
+    public DiagnosisService(DiagnosisRepository diagnoses, MedicalEncounterRepository encounters,
+                            ReferenceLookupPort lookup) {
         this.diagnoses = diagnoses;
         this.encounters = encounters;
+        this.lookup = lookup;
+    }
+
+    public DiagnosisService(DiagnosisRepository diagnoses, MedicalEncounterRepository encounters) {
+        this(diagnoses, encounters, null);
     }
 
     @Transactional
@@ -40,6 +50,22 @@ public class DiagnosisService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot add diagnosis when encounter is " + e.getStatus());
         }
+
+        if (lookup != null && e.getAttendingEmployeeId() != null) {
+            var practitionerOpt = lookup.getPractitionerDetails(e.getAttendingEmployeeId());
+            if (practitionerOpt.isPresent()) {
+                var p = practitionerOpt.get();
+                if (!p.active()) {
+                    throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                            "Attending practitioner is not in ACTIVE status (current: " + p.status() + ")");
+                }
+                if (!p.hasVerifiedLicense()) {
+                    throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                            "Attending practitioner does not hold a valid verified medical practice license (CCHN)");
+                }
+            }
+        }
+
         if (type == DiagnosisType.PRIMARY
                 && diagnoses.existsByEncounterIdAndDiagnosisType(encounterId, DiagnosisType.PRIMARY)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
