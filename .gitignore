@@ -1,14 +1,66 @@
-# Local secrets and machine-specific configuration. Keep documented examples tracked.
+# Environment & Local Configuration
 .env
 .env.*
 !.env.example
 *.local
 
-# Diagnostic output must not become a source of sensitive data.
+# Diagnostic & Package Manager Logs
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Downloaded Maven distribution used by the local wrapper.
+# Backend (Java / Maven / Spring Boot)
+target/
+**/target/
+*.class
 backend/.mvn/apache-maven-*/
-frontend/node_modules/
-frontend/dist/
-frontend/*.tsbuildinfo
+.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend (Node.js / React / Vite / TypeScript)
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+dist-ssr/
+*.tsbuildinfo
+.eslintcache
+
+# Testing & Coverage
+coverage/
+**/coverage/
+*.lcov
+.nyc_output/
+
+# IDE & Code Editors
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+!.vscode/extensions.json
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary & Swap Files
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
