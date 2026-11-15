@@ -14,6 +14,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import vn.edu.ptit.smarthms.common.logging.CorrelationLoggingFilter;
 
+/**
+ * Mô tả: Kiểm thử bộ lọc CorrelationLoggingFilter - kiểm tra sinh mã correlation ID và truyền qua response header
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
+ */
 class CorrelationLoggingFilterTest {
 
     private final CorrelationLoggingFilter filter = new CorrelationLoggingFilter();

@@ -16,6 +16,11 @@ import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalRecordRepository;
 import vn.edu.ptit.smarthms.emr.service.EncounterService;
 
+/**
+ * Mô tả: Kiểm thử phân quyền RBAC (Role-Based Access Control) khi thao tác với lượt khám bệnh
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
+ */
 class EncounterServiceRbacTest {
 
     private static final Actor DOCTOR = new Actor("EMP-DEMO-001", Set.of("DOCTOR"));

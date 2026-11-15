@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import vn.edu.ptit.smarthms.hr.service.SchIntegrationDispatcher.SchedulerClient;
 
+/**
+ * Mô tả: Giả lập Client gọi dịch vụ Scheduler (SCH) có hỗ trợ mô phỏng ngoại lệ TimeoutException để kiểm thử Retry
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 public class MockSchedulerClient implements SchedulerClient {
 
     private boolean simulateTimeout = false;

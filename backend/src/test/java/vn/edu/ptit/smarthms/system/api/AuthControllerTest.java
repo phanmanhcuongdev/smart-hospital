@@ -36,6 +36,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Mô tả: Kiểm thử API AuthController - kiểm thử các kịch bản đăng nhập, đăng xuất, lấy thông tin phiên qua MockMvc
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
 

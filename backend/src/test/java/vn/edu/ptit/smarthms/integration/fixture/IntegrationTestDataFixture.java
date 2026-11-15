@@ -8,6 +8,11 @@ import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 import vn.edu.ptit.smarthms.hr.domain.Employee;
 import vn.edu.ptit.smarthms.hr.domain.PersonnelDecision;
 
+/**
+ * Mô tả: Bộ dữ liệu mẫu chuẩn (Fixture) phục vụ chạy 10 kịch bản kiểm thử tích hợp (TC-INT-001 -> TC-INT-010)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 public final class IntegrationTestDataFixture {
 
     private IntegrationTestDataFixture() {}

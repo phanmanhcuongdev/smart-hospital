@@ -13,7 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 import vn.edu.ptit.smarthms.system.domain.AuditEvent;
 import vn.edu.ptit.smarthms.system.repository.AuditEventRepository;
 
-/** Read-only view of sys.audit_event (merged from the phung-nam branch). */
+/**
+ * Mô tả: Controller cung cấp API tra cứu danh sách nhật ký kiểm toán (Audit Events) hệ thống
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @RestController
 @RequestMapping("/api/v1/audit")
 public class AuditController {
@@ -33,6 +37,11 @@ public class AuditController {
         this.repository = repository;
     }
 
+    /**
+     * Mô tả: Lấy danh sách các sự kiện kiểm toán hệ thống được sắp xếp giảm dần theo thời gian
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @GetMapping("/events")
     @PreAuthorize("hasAuthority('AUDIT_EVENT:READ:ALL')")
     public List<AuditEventResponse> events(@RequestParam(defaultValue = "100") int limit) {

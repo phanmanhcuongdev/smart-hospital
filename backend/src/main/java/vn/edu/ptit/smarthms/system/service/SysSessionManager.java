@@ -8,6 +8,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
+/**
+ * Mô tả: Bộ quản lý phiên đăng nhập mở rộng (SysSessionManager) - hỗ trợ hủy toàn bộ phiên đang hoạt động
+ *        khi nhân sự bị đình chỉ hoặc chấm dứt hợp đồng (phục vụ ca kiểm thử tích hợp TC-INT-007)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Service
 public class SysSessionManager {
 

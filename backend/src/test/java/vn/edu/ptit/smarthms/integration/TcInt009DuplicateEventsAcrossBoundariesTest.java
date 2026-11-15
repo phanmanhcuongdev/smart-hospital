@@ -21,7 +21,9 @@ import vn.edu.ptit.smarthms.hr.domain.IntegrationOutboxRepository;
 import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 
 /**
- * TC-INT-009: Duplicate events across boundaries (P1)
+ * Mô tả: Kiểm thử tích hợp TC-INT-009 - Kiểm tra khả năng xử lý an toàn sự kiện trùng lặp giữa ranh giới các module
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt009DuplicateEventsAcrossBoundariesTest {
 

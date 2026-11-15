@@ -17,7 +17,9 @@ import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 import vn.edu.ptit.smarthms.system.service.SysSessionManager;
 
 /**
- * TC-INT-007: HR terminated → SYS session invalidate
+ * Mô tả: Kiểm thử tích hợp TC-INT-007 - Kiểm tra việc tự động hủy phiên đăng nhập (Invalidate Session) khi nhân viên bị chấm dứt hợp đồng
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt007HrTerminatedSessionInvalidateTest {
 

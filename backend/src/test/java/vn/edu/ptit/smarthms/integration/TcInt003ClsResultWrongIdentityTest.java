@@ -19,7 +19,9 @@ import vn.edu.ptit.smarthms.emr.service.ClsIntegrationService;
 import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 
 /**
- * TC-INT-003: CLS result wrong identity
+ * Mô tả: Kiểm thử tích hợp TC-INT-003 - Phát hiện sai lệch định danh bệnh nhân khi tiếp nhận kết quả cận lâm sàng và cách ly dữ liệu
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt003ClsResultWrongIdentityTest {
 

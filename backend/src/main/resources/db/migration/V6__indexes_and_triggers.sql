@@ -1,4 +1,8 @@
--- IV.2 v0.9-RC indexes & protective triggers for PostgreSQL (from SQL/IV2_02_indexes_triggers.sql)
+-- ==============================================================
+-- Mô tả: Thiết lập các chỉ mục (Indexes) và Trigger bảo vệ dữ liệu, tính toàn vẹn và tối ưu hiệu năng CSDL
+-- Người thực hiện: Đoàn Thị Hồng Nhung
+-- Ngày thực hiện: 12/11/2026
+-- ==============================================================
 CREATE INDEX IF NOT EXISTS idx_appointment_fixture_patient_id ON ref.appointment_fixture (patient_id);
 CREATE INDEX IF NOT EXISTS idx_allergy_fixture_patient_id ON ref.allergy_fixture (patient_id);
 CREATE INDEX IF NOT EXISTS idx_department_parent_department_id ON hr.department (parent_department_id);

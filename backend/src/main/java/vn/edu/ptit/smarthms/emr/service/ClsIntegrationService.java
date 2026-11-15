@@ -14,6 +14,13 @@ import vn.edu.ptit.smarthms.emr.repository.ClinicalResultRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalOrderRepository;
 
+/**
+ * Mô tả: Dịch vụ tích hợp kết quả cận lâm sàng (CLS Integration Service) - đảm bảo xử lý an toàn
+ *        với tính chất Idempotency (chống trùng lặp dữ liệu), kiểm tra khớp định danh bệnh nhân (chống nhầm lẫn kết quả)
+ *        và cách ly (Quarantine) các kết quả có sai lệch thông tin
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Service
 public class ClsIntegrationService {
 

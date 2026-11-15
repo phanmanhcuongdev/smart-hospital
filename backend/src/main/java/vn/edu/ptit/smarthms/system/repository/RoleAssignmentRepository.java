@@ -10,6 +10,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Mô tả: Repository truy vấn các vai trò đang có hiệu lực theo ID người dùng và thời điểm hiện tại
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Repository
 public interface RoleAssignmentRepository extends JpaRepository<RoleAssignment, UUID> {
 

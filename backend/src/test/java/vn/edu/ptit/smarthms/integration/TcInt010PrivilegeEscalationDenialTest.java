@@ -17,7 +17,9 @@ import vn.edu.ptit.smarthms.system.domain.AuditEvent;
 import vn.edu.ptit.smarthms.system.service.AuditService;
 
 /**
- * TC-INT-010: Privilege escalation denial
+ * Mô tả: Kiểm thử tích hợp TC-INT-010 - Ngăn chặn và ghi nhận audit log các hành vi cố tình leo thang đặc quyền trái phép
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt010PrivilegeEscalationDenialTest {
 

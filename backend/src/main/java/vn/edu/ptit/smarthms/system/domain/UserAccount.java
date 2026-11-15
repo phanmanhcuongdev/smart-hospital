@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Mô tả: Thực thể tài khoản người dùng (sys.user_account) kết nối với nhân viên HR và chứa thông tin xác thực
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(name = "user_account", schema = "sys")
 public class UserAccount extends AuditableEntity {

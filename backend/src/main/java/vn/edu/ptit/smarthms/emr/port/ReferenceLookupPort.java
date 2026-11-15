@@ -4,6 +4,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Mô tả: Interface cổng tra cứu danh mục (Port) giữa module EMR và các module HR/SYS,
+ *        định nghĩa hợp đồng dữ liệu cho bệnh nhân, bác sĩ, khoa phòng, thuốc và người dùng
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
+ */
 public interface ReferenceLookupPort {
     record PatientSummary(UUID patientId, String displayName, String identityStatus) {}
 

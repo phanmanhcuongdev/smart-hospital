@@ -14,8 +14,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Reads the "Authorization: Bearer <token>" header and authenticates the request
- * by looking up the opaque token from sys.session.
+ * Mô tả: Bộ lọc (Filter) chặn mọi request để trích xuất header "Authorization: Bearer <token>", 
+ *        xác thực token qua TokenService/UserDetailsService và thiết lập SecurityContext cho phiên làm việc
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 public class BearerTokenFilter extends OncePerRequestFilter {
 
@@ -28,6 +30,11 @@ public class BearerTokenFilter extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * Mô tả: Kiểm tra và giải mã Bearer token từ request header, nạp quyền người dùng vào SecurityContextHolder
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

@@ -15,8 +15,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Intercepts all incoming requests to inject/propagate Correlation ID into MDC,
- * request attributes, and HTTP response headers, while logging centralized request telemetry.
+ * Mô tả: Bộ lọc ghi log tập trung - tự động gán hoặc lan truyền header X-Correlation-ID vào MDC
+ *        và response header, đồng thời đo lường thời gian thực thi của mọi request trong hệ thống
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

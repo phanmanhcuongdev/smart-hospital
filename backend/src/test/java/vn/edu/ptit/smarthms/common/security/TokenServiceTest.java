@@ -17,6 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+/**
+ * Mô tả: Kiểm thử dịch vụ TokenService - sinh token, băm SHA-256, kiểm tra tính hợp lệ và thu hồi token
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @ExtendWith(MockitoExtension.class)
 class TokenServiceTest {
 

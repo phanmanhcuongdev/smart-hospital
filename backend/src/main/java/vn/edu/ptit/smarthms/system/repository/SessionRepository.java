@@ -10,6 +10,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Mô tả: Repository quản lý phiên làm việc, tìm kiếm phiên theo mã băm token và xóa các phiên đã hết hạn
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Repository
 public interface SessionRepository extends JpaRepository<Session, UUID> {
     Optional<Session> findByTokenDigest(String tokenDigest);

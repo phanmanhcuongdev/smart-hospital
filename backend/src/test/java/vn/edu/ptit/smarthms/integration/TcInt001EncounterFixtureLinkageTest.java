@@ -19,7 +19,9 @@ import vn.edu.ptit.smarthms.emr.service.EncounterService;
 import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 
 /**
- * TC-INT-001: D4→D5: Encounter fixture → EMR
+ * Mô tả: Kiểm thử tích hợp TC-INT-001 - Kiểm tra liên kết dữ liệu fixture lượt khám và tạo bệnh án nháp EMR
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt001EncounterFixtureLinkageTest {
 

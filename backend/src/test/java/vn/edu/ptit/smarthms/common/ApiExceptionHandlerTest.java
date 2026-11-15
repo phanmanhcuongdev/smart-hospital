@@ -18,6 +18,11 @@ import vn.edu.ptit.smarthms.common.error.NotFoundException;
 import vn.edu.ptit.smarthms.common.error.ValidationException;
 import vn.edu.ptit.smarthms.common.logging.CorrelationLoggingFilter;
 
+/**
+ * Mô tả: Kiểm thử bộ xử lý ngoại lệ tập trung ApiExceptionHandler - kiểm tra mã lỗi HTTP và định dạng JSON thống nhất
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
+ */
 class ApiExceptionHandlerTest {
 
     private final ApiExceptionHandler handler = new ApiExceptionHandler();

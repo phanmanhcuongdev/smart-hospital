@@ -1,6 +1,8 @@
--- V5: Auth & RBAC seed data merged from the phung-nam branch
--- Seeds sys.role, sys.permission, sys.role_permission, sys.user_account, and sys.role_assignment.
--- Fixed UUIDs for idempotency.
+-- ==============================================================
+-- Mô tả: Khởi tạo dữ liệu mẫu cho hệ thống xác thực và phân quyền (Roles, Permissions, User Accounts, Role Assignments)
+-- Người thực hiện: Đoàn Thị Hồng Nhung
+-- Ngày thực hiện: 12/11/2026
+-- ==============================================================
 
 -- ==================== ROLES ====================
 INSERT INTO sys.role (role_id, role_code, display_name, created_at, updated_at, created_by, updated_by)

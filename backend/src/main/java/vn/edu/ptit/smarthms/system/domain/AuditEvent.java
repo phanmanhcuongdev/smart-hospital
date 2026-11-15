@@ -9,6 +9,11 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * Mô tả: Thực thể nhật ký kiểm toán (sys.audit_event) ghi nhận thông tin sự kiện an toàn, người thực hiện, đối tượng tác động và kết quả (SUCCESS, DENIED, FAILURE)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(schema = "sys", name = "audit_event")
 public class AuditEvent {

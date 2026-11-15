@@ -7,7 +7,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 
-/** Tích hợp dữ liệu danh mục EMR với HR, SYS và Patient qua JDBC. */
+/**
+ * Mô tả: Adapter tích hợp dữ liệu danh mục EMR với HR (bác sĩ, nhân viên, khoa phòng) và SYS qua JDBC,
+ *        đảm bảo kiểm tra tính hợp lệ và chứng chỉ hành nghề của bác sĩ khi lập lượt khám
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
+ */
 @Component
 class FixtureReferenceLookupAdapter implements ReferenceLookupPort {
     private final JdbcTemplate jdbc;

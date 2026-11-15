@@ -1,5 +1,8 @@
--- V4: Encounter department and practitioner data linkage (Task 3)
--- Connects emr.medical_encounter with hr.department and ensures doctor licensing data is available
+-- ==============================================================
+-- Mô tả: Kết nối dữ liệu lượt khám (EMR) với khoa/phòng và dữ liệu chứng chỉ bác sĩ (HR)
+-- Người thực hiện: Đoàn Thị Hồng Nhung
+-- Ngày thực hiện: 11/11/2026
+-- ==============================================================
 
 BEGIN;
 

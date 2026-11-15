@@ -18,7 +18,9 @@ import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 import vn.edu.ptit.smarthms.integration.mock.MockSchedulerClient;
 
 /**
- * TC-INT-005: HR effective decision → outbox
+ * Mô tả: Kiểm thử tích hợp TC-INT-005 - Kiểm tra việc tạo sự kiện Outbox tự động khi có quyết định nhân sự có hiệu lực
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt005HrDecisionOutboxTest {
 

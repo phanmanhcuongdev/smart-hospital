@@ -19,7 +19,9 @@ import vn.edu.ptit.smarthms.emr.service.ClsIntegrationService;
 import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 
 /**
- * TC-INT-004: CLS replay/delay
+ * Mô tả: Kiểm thử tích hợp TC-INT-004 - Kiểm tra tính bất biến (Idempotency), chống nhân bản kết quả khi bị gửi lặp lại hoặc trễ
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt004ClsReplayDelayTest {
 

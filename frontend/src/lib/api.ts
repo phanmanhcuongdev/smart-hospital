@@ -1,7 +1,11 @@
 import type { Role } from "../auth/auth";
 
-// Authenticated API client for the SmartHMS backend.
-// Uses Opaque Bearer Tokens issued by POST /api/v1/auth/login (merged from phung-nam).
+/**
+ * Mô tả: Client API xác thực cho ứng dụng SmartHMS Frontend - tự động đính kèm Bearer token,
+ *        xử lý đăng nhập (login), đăng xuất (logout), lấy thông tin phiên (me), audit log và chuẩn hóa lỗi API
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 
 export interface Auth {
   username: string;

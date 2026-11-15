@@ -10,7 +10,9 @@ import vn.edu.ptit.smarthms.system.repository.SessionRepository;
 import java.time.Instant;
 
 /**
- * Scheduled task that removes expired sessions from the database.
+ * Mô tả: Tiến trình chạy ngầm định kỳ (Scheduled Job) tự động dọn dẹp các phiên làm việc (Session) đã hết hạn
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 @Service
 public class SessionCleanupService {

@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Mô tả: Thực thể vai trò người dùng (sys.role) liên kết n-n với danh sách quyền (Permission)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(name = "role", schema = "sys")
 public class Role extends AuditableEntity {

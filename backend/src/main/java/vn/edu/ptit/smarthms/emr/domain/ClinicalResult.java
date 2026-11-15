@@ -9,6 +9,12 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * Mô tả: Thực thể lưu trữ kết quả cận lâm sàng (CLS) tiếp nhận từ hệ thống bên ngoài,
+ *        hỗ trợ kiểm soát chất lượng (VALID, QUARANTINED) và lưu vết nguồn gốc (provenance)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(schema = "emr", name = "clinical_result")
 public class ClinicalResult {

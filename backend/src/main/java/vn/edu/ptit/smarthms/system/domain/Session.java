@@ -5,6 +5,11 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Mô tả: Thực thể phiên làm việc (sys.session) lưu trữ bản băm token SHA-256, thời điểm hết hạn và trạng thái thu hồi
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(name = "session", schema = "sys")
 public class Session extends AuditableEntity {

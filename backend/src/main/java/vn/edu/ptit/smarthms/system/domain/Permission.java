@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 
 import java.util.UUID;
 
+/**
+ * Mô tả: Thực thể quyền hạn (sys.permission) cấu trúc dạng RESOURCE:ACTION:SCOPE phục vụ phân quyền chi tiết
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(name = "permission", schema = "sys",
         uniqueConstraints = @UniqueConstraint(columnNames = {"resource_code", "action_code", "scope_code"}))

@@ -20,9 +20,10 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import vn.edu.ptit.smarthms.common.logging.CorrelationContext;
 
 /**
- * Global API exception handler for both EMR and HR modules,
- * formatting all error responses into a unified JSON structure:
- * { "code": string, "message": string, "correlationId": string, "timestamp": string }
+ * Mô tả: Bộ xử lý ngoại lệ tập trung (Global Exception Handler) cho cả 2 module EMR và HR,
+ *        chuẩn hóa cấu trúc phản hồi lỗi dạng JSON thống nhất kèm mã lỗi, message và Correlation ID
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {

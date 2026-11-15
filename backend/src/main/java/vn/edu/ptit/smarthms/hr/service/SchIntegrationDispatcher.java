@@ -10,6 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu.ptit.smarthms.hr.domain.IntegrationOutbox;
 import vn.edu.ptit.smarthms.hr.domain.IntegrationOutboxRepository;
 
+/**
+ * Mô tả: Bộ phân phối sự kiện Outbox (SchIntegrationDispatcher) - gửi sự kiện nhân sự sang hệ thống lịch làm việc (SCH)
+ *        có xử lý ngoại lệ Timeout, cơ chế thử lại (Retry) và cập nhật trạng thái DeliveryState
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Service
 public class SchIntegrationDispatcher {
 

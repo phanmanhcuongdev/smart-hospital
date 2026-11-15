@@ -15,7 +15,9 @@ import vn.edu.ptit.smarthms.hr.service.SchIntegrationDispatcher;
 import vn.edu.ptit.smarthms.integration.mock.MockSchedulerClient;
 
 /**
- * TC-INT-006: SCH mock timeout + retry
+ * Mô tả: Kiểm thử tích hợp TC-INT-006 - Kiểm tra cơ chế xử lý Timeout và Retry của bộ phân phối sự kiện Outbox sang SCH
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt006SchMockTimeoutRetryTest {
 

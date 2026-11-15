@@ -5,6 +5,11 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Mô tả: Thực thể phân công vai trò người dùng (sys.role_assignment) có thời hạn hiệu lực (start_at, end_at)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Entity
 @Table(name = "role_assignment", schema = "sys")
 public class RoleAssignment extends AuditableEntity {

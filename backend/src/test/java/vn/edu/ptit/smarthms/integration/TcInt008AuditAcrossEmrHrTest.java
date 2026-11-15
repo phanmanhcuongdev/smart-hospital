@@ -13,7 +13,9 @@ import vn.edu.ptit.smarthms.system.repository.AuditEventRepository;
 import vn.edu.ptit.smarthms.system.service.AuditService;
 
 /**
- * TC-INT-008: Audit across EMR/HR
+ * Mô tả: Kiểm thử tích hợp TC-INT-008 - Kiểm tra nhật ký kiểm toán ghi vết thống nhất xuyên suốt các hành vi trong EMR và HR
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt008AuditAcrossEmrHrTest {
 

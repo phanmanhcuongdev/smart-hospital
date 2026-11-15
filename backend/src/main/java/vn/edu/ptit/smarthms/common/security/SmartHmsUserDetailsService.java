@@ -24,10 +24,10 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Loads SYS user accounts (sys.user_account) with their active role assignments.
- * Authorities contain the role codes (for example ROLE_DOCTOR) and the permission
- * strings RESOURCE:ACTION:SCOPE. The module services read the roles through
- * {@link ActorResolver}, which strips the ROLE_ prefix.
+ * Mô tả: Dịch vụ tải thông tin người dùng từ CSDL (sys_user_account) kèm các vai trò và quyền hạn (permissions)
+ *        tương ứng, hỗ trợ tra cứu theo username hoặc Bearer token
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 @Service
 public class SmartHmsUserDetailsService implements UserDetailsService {
@@ -47,6 +47,11 @@ public class SmartHmsUserDetailsService implements UserDetailsService {
         this.roleHierarchy = roleHierarchy;
     }
 
+    /**
+     * Mô tả: Tải thông tin người dùng theo tên đăng nhập (username) phục vụ xác thực khi login
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -61,6 +66,11 @@ public class SmartHmsUserDetailsService implements UserDetailsService {
                 account.getUserId(), buildAuthorities(account));
     }
 
+    /**
+     * Mô tả: Tải và xác thực người dùng từ Bearer token cho các request tiếp theo
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Transactional(readOnly = true)
     public UserDetails loadUserByToken(String rawToken) {
         Session session = tokenService.validateToken(rawToken)
@@ -75,6 +85,11 @@ public class SmartHmsUserDetailsService implements UserDetailsService {
                 account.getUserId(), buildAuthorities(account));
     }
 
+    /**
+     * Mô tả: Xây dựng danh sách quyền (Authorities) gồm Role và Permissions từ CSDL thông qua RoleHierarchy
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     private List<GrantedAuthority> buildAuthorities(UserAccount account) {
         List<GrantedAuthority> authorities = new ArrayList<>();
         List<RoleAssignment> activeAssignments =

@@ -19,7 +19,9 @@ import vn.edu.ptit.smarthms.emr.service.DiagnosisService;
 import vn.edu.ptit.smarthms.integration.fixture.IntegrationTestDataFixture;
 
 /**
- * TC-INT-002: HR credential guard → EMR
+ * Mô tả: Kiểm thử tích hợp TC-INT-002 - Kiểm tra bảo vệ chứng chỉ hành nghề bác sĩ (HR) khi chẩn đoán (EMR)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 class TcInt002HrCredentialGuardTest {
 

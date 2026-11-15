@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thành phần chính App - Tích hợp toàn diện giao diện Frontend cho cả 2 module EMR và HR,
+ *        quản lý điều hướng (Routing), xác thực người dùng (Auth/Session), phân quyền hiển thị theo Role
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 11/11/2026 - 12/11/2026
+ */
 import { useEffect, useState } from "react";
 import { statusLabel } from "./lib/labels";
 import type { FormEvent } from "react";

@@ -7,7 +7,9 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * Extended UserDetails that also carries the UUID of the user account.
+ * Mô tả: Đối tượng UserDetails mở rộng của Spring Security, lưu trữ thêm thông tin UUID của tài khoản người dùng
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 public class SmartHmsUserDetails extends User {
 

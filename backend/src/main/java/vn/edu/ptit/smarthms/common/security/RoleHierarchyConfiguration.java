@@ -7,9 +7,19 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 
+/**
+ * Mô tả: Cấu hình thứ bậc vai trò (Role Hierarchy) cho Spring Security, cho phép tài khoản Admin kế thừa quyền của các vai trò khác
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Configuration
 public class RoleHierarchyConfiguration {
 
+    /**
+     * Mô tả: Thiết lập cây kế thừa quyền giữa vai trò quản trị viên (ROLE_ADMIN) và các vai trò nghiệp vụ khác
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Bean
     public RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy(String.join("\n",

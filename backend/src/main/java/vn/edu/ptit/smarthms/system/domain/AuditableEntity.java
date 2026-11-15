@@ -8,8 +8,10 @@ import jakarta.persistence.PreUpdate;
 import java.time.Instant;
 
 /**
- * Audit columns shared by the SYS account tables (user_account, role, permission,
- * role_assignment, session). Ported from the phung-nam branch.
+ * Mô tả: Lớp cơ sở (MappedSuperclass) tự động ghi nhận các trường thông tin kiểm toán (created_at, updated_at, created_by, updated_by)
+ *        cho toàn bộ các thực thể thuộc schema sys
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 @MappedSuperclass
 public abstract class AuditableEntity {

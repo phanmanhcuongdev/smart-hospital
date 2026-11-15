@@ -1,4 +1,9 @@
-// Authentication & RBAC helper definitions (integrated with phung-nam Bearer token auth).
+/**
+ * Mô tả: Module định nghĩa và xử lý logic phân quyền (RBAC), vai trò (Role), danh sách tài khoản demo
+ *        và ánh xạ quyền truy cập giữa 2 module EMR và HR
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 
 export type Role =
   | "DOCTOR"

@@ -9,6 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.edu.ptit.smarthms.system.domain.AuditEvent;
 import vn.edu.ptit.smarthms.system.repository.AuditEventRepository;
 
+/**
+ * Mô tả: Dịch vụ ghi nhận và tra cứu nhật ký kiểm toán (Audit Log) toàn hệ thống, tự động ẩn (sanitize/redact)
+ *        các trường thông tin nhạy cảm (mật khẩu, token, thông tin y tế nhạy cảm)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @Service
 public class AuditService {
 

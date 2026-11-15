@@ -23,13 +23,10 @@ import vn.edu.ptit.smarthms.common.logging.CorrelationContext;
 import vn.edu.ptit.smarthms.common.logging.CorrelationLoggingFilter;
 
 /**
- * Stateless security based on the SYS account tables (merged from the phung-nam branch).
- * <ul>
- *   <li>POST /api/v1/auth/login checks username/password (BCrypt) against sys.user_account
- *       and returns an opaque bearer token; only its SHA-256 digest is stored in sys.session.</li>
- *   <li>Every other /api/v1 call must send "Authorization: Bearer &lt;token&gt;".</li>
- * </ul>
- * Module rules are still enforced inside the services through the {@link Actor}.
+ * Mô tả: Cấu hình bảo mật hệ thống (Spring Security) - kiểm soát truy cập phi trạng thái (Stateless),
+ *        đăng ký bộ lọc BearerTokenFilter, phân quyền theo URL và chuẩn hóa phản hồi lỗi xác thực (401/403)
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
  */
 @Configuration
 @EnableMethodSecurity
@@ -41,11 +38,21 @@ public class SecurityConfiguration {
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * Mô tả: Khởi tạo bộ mã hóa mật khẩu sử dụng BCrypt (độ phức tạp 12)
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
+    /**
+     * Mô tả: Cấu hình AuthenticationManager sử dụng DaoAuthenticationProvider kết nối với SmartHmsUserDetailsService
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Bean
     public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
@@ -53,6 +60,12 @@ public class SecurityConfiguration {
         return new ProviderManager(provider);
     }
 
+    /**
+     * Mô tả: Cấu hình chuỗi lọc bảo mật SecurityFilterChain, cho phép truy cập public vào endpoint login/health
+     *        và yêu cầu xác thực Bearer token cho tất cả các API nghiệp vụ khác
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

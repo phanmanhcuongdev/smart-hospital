@@ -31,7 +31,12 @@ import vn.edu.ptit.smarthms.system.repository.SessionRepository;
 import vn.edu.ptit.smarthms.system.repository.UserAccountRepository;
 import vn.edu.ptit.smarthms.system.service.AuditService;
 
-/** Login / logout / current user (merged from the phung-nam branch). */
+/**
+ * Mô tả: Controller xử lý xác thực người dùng (đăng nhập, đăng xuất, lấy thông tin phiên làm việc hiện tại)
+ *        và ghi vết audit log cho các sự kiện đăng nhập/đăng xuất.
+ * Người thực hiện: Đoàn Thị Hồng Nhung
+ * Ngày thực hiện: 12/11/2026
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -57,6 +62,11 @@ public class AuthController {
         this.auditService = auditService;
     }
 
+    /**
+     * Mô tả: Xử lý đăng nhập tài khoản, xác thực thông tin đăng nhập, sinh phiên Session mới và cấp Bearer token
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication;
@@ -91,6 +101,11 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(rawToken, expiresAt, userAccount.getUsername(), roles));
     }
 
+    /**
+     * Mô tả: Xử lý đăng xuất tài khoản, thu hồi phiên làm việc (revoke session token) và ghi nhận audit log
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
@@ -104,6 +119,11 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Mô tả: Lấy thông tin tài khoản hiện tại kèm danh sách các vai trò (roles) và quyền hạn (permissions)
+     * Người thực hiện: Đoàn Thị Hồng Nhung
+     * Ngày thực hiện: 12/11/2026
+     */
     @GetMapping("/me")
     public ResponseEntity<MeResponse> me() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
