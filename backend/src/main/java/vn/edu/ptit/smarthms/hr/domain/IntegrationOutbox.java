@@ -31,6 +31,9 @@ public class IntegrationOutbox extends AuditedEntity {
     @Column(name = "event_key", nullable = false, unique = true, length = 200)
     private String eventKey;
 
+    @Column(name = "event_type", nullable = false, length = 64)
+    private String eventType;
+
     @Column(name = "employee_id", nullable = false)
     private UUID employeeId;
 
@@ -63,6 +66,14 @@ public class IntegrationOutbox extends AuditedEntity {
 
     public String getEventKey() {
         return eventKey;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 
     public UUID getEmployeeId() {

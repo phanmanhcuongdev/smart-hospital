@@ -200,6 +200,7 @@ public class PersonnelDecisionService {
                 + decision.getEmployeeId() + "\",\"decisionId\":\"" + decision.getId()
                 + "\",\"effectiveAt\":\"" + decision.getEffectiveAt() + "\"}";
         IntegrationOutbox event = new IntegrationOutbox(eventKey, decision.getEmployeeId(), payload);
+    event.setEventType("EMPLOYEE_TERMINATED");
         event.setCreatedBy(writtenBy);
         event.setUpdatedBy(writtenBy);
         outbox.save(event);
