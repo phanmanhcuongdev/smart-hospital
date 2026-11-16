@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ quản lý hồ sơ vai trò của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 23/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import java.util.ArrayList;

@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Định nghĩa các DTO (record) dùng cho request của API HR: tạo và cập nhật nhân viên, phòng ban, hồ sơ vai trò, quyết định nhân sự, chứng chỉ và điều chuyển
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 23/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.api;
 
 import java.time.Instant;

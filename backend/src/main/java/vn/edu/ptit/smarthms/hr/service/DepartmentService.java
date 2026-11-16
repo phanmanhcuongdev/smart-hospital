@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ quản lý phòng ban
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 20/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import vn.edu.ptit.smarthms.hr.domain.EmploymentRepository;

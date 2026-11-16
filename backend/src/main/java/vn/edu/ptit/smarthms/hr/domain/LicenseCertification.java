@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thực thể JPA mô tả chứng chỉ của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 14/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.time.LocalDate;

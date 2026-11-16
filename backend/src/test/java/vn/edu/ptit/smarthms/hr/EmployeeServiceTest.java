@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Kiểm thử nghiệp vụ quản lý nhân viên (EmployeeServiceService)
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 07/11/2026
+ */
+
 package vn.edu.ptit.smarthms.hr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

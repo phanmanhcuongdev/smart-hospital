@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Cung cấp REST API quản lý chứng chỉ của nhân viên của module HR
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 26/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.api;
 
 import java.util.List;

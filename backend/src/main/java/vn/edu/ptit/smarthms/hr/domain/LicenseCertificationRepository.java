@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Repository JPA truy vấn dữ liệu chứng chỉ của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 18/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.util.List;

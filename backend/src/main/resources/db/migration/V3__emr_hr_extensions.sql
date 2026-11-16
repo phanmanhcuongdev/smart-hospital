@@ -1,3 +1,9 @@
+-- ==============================================================
+-- Mô tả: Bổ sung schema cho module EMR/HR (FR-HR-01 đến FR-HR-04): hồ sơ vai trò, lịch sử trạng thái nhân viên và trạng thái REJECTED cho chứng chỉ
+-- Người thực hiện: Tran Hoang Nam
+-- Ngày thực hiện: 12/10/2026
+-- ==============================================================
+
 -- V3: EMR/HR module extensions (2026-11-07).
 -- All changes are additive; no V1 table is dropped or renamed.
 -- Fills the spec-to-schema gaps for FR-HR-01 to FR-HR-04:

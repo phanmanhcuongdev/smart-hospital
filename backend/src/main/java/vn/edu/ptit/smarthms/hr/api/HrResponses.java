@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Định nghĩa các DTO (record) dùng cho response của API HR: phòng ban, nhân viên, phân công công tác, chứng chỉ và quyết định nhân sự
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 24/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.api;
 
 import java.time.Instant;

@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ quản lý hồ sơ nhân viên: tạo, cập nhật, xóa, tìm kiếm nhân viên và xem phân công công tác cùng lịch sử trạng thái
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 21/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import vn.edu.ptit.smarthms.hr.domain.PersonnelDecisionRepository;

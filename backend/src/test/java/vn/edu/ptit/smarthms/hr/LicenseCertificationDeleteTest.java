@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Kiểm thử việc xóa chứng chỉ của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 08/11/2026
+ */
+
 package vn.edu.ptit.smarthms.hr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

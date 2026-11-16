@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Kiểm thử nghiệp vụ quản lý chứng chỉ của nhân viên (LicenseCertificationServiceService)
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 08/11/2026
+ */
+
 package vn.edu.ptit.smarthms.hr;
 
 import java.time.LocalDate;

@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Cung cấp REST API quản lý quá trình công tác của nhân viên, gồm điều chuyển nhân sự giữa các phòng ban
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 26/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.api;
 
 import java.util.UUID;

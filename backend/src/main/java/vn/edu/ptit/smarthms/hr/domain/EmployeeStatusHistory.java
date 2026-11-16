@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thực thể JPA lưu lịch sử thay đổi trạng thái của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 15/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.time.Instant;

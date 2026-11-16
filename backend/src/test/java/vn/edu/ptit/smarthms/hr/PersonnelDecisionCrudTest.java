@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Kiểm thử CRUD quyết định nhân sự
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 09/11/2026
+ */
+
 package vn.edu.ptit.smarthms.hr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

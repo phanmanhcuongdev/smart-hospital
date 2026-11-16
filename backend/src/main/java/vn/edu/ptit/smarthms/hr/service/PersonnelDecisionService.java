@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ quản lý quyết định nhân sự: tạo, phê duyệt, thu hồi và áp dụng các quyết định đến hạn
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 22/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import java.time.Instant;

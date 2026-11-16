@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thực thể JPA mô tả quyết định nhân sự đối với nhân viên (kích hoạt, tạm đình chỉ, trở lại làm việc, chấm dứt, điều chuyển), gồm trạng thái phê duyệt và thi hành
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 14/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.time.Instant;

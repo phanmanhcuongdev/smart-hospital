@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ điều chuyển nhân sự: tạo quyết định điều chuyển và xem lịch sử phân công công tác của nhân viên
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 21/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import java.time.Instant;

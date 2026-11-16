@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Xử lý nghiệp vụ quản lý chứng chỉ của nhân viên, gồm kiểm tra tính hợp lệ của chứng chỉ hành nghề (CCHN)
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 22/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.service;
 
 import java.time.LocalDate;

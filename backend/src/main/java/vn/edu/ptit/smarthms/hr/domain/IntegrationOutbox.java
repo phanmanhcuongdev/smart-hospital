@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thực thể JPA lưu các sự kiện tích hợp (outbox) của module HR chờ gửi sang module khác
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 16/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.time.Instant;

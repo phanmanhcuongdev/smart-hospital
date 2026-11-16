@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Kiểm thử nghiệp vụ quản lý quá trình công tác của nhân viên (EmploymentServiceService)
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 08/11/2026
+ */
+
 package vn.edu.ptit.smarthms.hr;
 
 import java.time.Instant;

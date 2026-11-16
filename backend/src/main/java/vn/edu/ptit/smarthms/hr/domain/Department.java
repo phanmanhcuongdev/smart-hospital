@@ -1,3 +1,9 @@
+/**
+ * Mô tả: Thực thể JPA mô tả phòng ban
+ * Người thực hiện: Tran Hoang Nam
+ * Ngày thực hiện: 12/10/2026
+ */
+
 package vn.edu.ptit.smarthms.hr.domain;
 
 import java.util.UUID;
