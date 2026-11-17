@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Các đường dẫn của hồ sơ: xem, chốt phiên bản, nộp, trả về sửa, khóa demo, bổ sung; từ chối yêu cầu xóa hồ sơ.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import jakarta.validation.Valid;

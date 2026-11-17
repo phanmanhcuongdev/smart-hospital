@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Liệt kê các trạng thái của lần khám và quy tắc được chuyển từ trạng thái nào sang trạng thái nào (theo sơ đồ IV7-SM-01).
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import java.util.Set;

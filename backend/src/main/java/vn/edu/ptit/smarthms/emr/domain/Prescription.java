@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Entity ánh xạ bảng emr.prescription: đơn thuốc ở trạng thái nháp, đã phát hành hoặc đã hủy.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import jakarta.persistence.*;

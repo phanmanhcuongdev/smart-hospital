@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Dựng ảnh chụp JSON của hồ sơ từ các bảng EMR, tính mã băm SHA-256 và lưu, đọc các phiên bản hồ sơ.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.nio.charset.StandardCharsets;

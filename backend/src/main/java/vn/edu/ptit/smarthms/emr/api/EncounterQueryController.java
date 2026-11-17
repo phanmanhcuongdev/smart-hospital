@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Đường dẫn danh sách lần khám có lọc theo bệnh nhân, trạng thái và phân trang.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import java.util.List;

@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Entity ánh xạ bảng emr.addendum: bản bổ sung (lý do, nội dung) thêm vào hồ sơ đã khóa mà không sửa bản gốc.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import jakarta.persistence.*;

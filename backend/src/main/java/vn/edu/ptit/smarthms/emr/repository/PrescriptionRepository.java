@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Truy vấn đơn thuốc theo lần khám.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.util.List;

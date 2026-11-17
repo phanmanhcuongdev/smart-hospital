@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Tìm kiếm và liệt kê lần khám theo bệnh nhân hoặc trạng thái, có phân trang.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.util.UUID;

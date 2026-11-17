@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ chẩn đoán: thêm chẩn đoán tạm thời; xác nhận chẩn đoán chính cần ICD-10 và mỗi lần khám chỉ có một chẩn đoán chính được xác nhận.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.util.List;
@@ -17,7 +22,7 @@ import vn.edu.ptit.smarthms.emr.domain.MedicalEncounter;
 import vn.edu.ptit.smarthms.emr.port.ReferenceLookupPort;
 import vn.edu.ptit.smarthms.emr.repository.DiagnosisRepository;
 import vn.edu.ptit.smarthms.emr.repository.MedicalEncounterRepository;
-
+import vn.edu.ptit.smarthms.common.error.ValidationException;
 @Service
 public class DiagnosisService {
     /** Giả định, cần đối chiếu BR trong III.3/IV.7. */
@@ -45,6 +50,10 @@ public class DiagnosisService {
     @Transactional
     public Diagnosis create(Actor actor, UUID encounterId, DiagnosisType type, String icd10Code, String narrative) {
         actor.requireAnyRole("DOCTOR", "ADMIN");
+        if (type == DiagnosisType.PRIMARY && (icd10Code == null || icd10Code.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "ICD-10 code is required for a PRIMARY diagnosis");
+        }
         MedicalEncounter e = findEncounter(encounterId);
         if (!CAN_ADD.contains(e.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,

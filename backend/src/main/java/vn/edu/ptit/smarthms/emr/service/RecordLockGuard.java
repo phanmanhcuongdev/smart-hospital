@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Chặn sửa dữ liệu gốc khi hồ sơ đã nộp hoặc đã khóa và ghi dấu vết từ chối.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.util.Set;

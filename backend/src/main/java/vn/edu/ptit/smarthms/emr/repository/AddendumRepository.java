@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Truy vấn các bản bổ sung theo hồ sơ.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.util.List;

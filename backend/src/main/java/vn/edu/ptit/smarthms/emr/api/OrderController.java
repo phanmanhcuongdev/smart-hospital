@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Các đường dẫn tạo, xem và đổi trạng thái chỉ định cận lâm sàng, gồm cả dữ liệu vào và dữ liệu ra.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import jakarta.validation.Valid;

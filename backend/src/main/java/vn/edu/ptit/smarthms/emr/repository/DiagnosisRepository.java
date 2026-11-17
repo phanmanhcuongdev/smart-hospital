@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Truy vấn chẩn đoán theo lần khám và kiểm tra đã có chẩn đoán chính được xác nhận chưa.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 09/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.util.List;

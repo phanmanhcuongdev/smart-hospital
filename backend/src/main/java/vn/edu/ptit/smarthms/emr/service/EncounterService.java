@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ lần khám: mở lần khám (kiểm tra bệnh nhân đã xác minh, bác sĩ đang làm việc), đổi trạng thái, tạo hồ sơ nháp khi bắt đầu khám, ghi audit.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.time.OffsetDateTime;

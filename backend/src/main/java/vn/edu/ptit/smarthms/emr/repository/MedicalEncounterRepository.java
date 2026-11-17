@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Truy vấn bảng lần khám, gồm tìm theo bệnh nhân và theo trạng thái có phân trang.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 09/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.util.UUID;

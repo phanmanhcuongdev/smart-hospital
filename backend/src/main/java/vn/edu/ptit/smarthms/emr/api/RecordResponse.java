@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Dữ liệu trả về của hồ sơ bệnh án, gồm trạng thái, phiên bản và mã kiểm soát thay đổi.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import java.time.OffsetDateTime;

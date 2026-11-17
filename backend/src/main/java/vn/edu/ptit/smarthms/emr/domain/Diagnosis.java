@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Entity ánh xạ bảng emr.diagnosis: tạo chẩn đoán ở trạng thái tạm thời và xác nhận chẩn đoán.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import jakarta.persistence.*;

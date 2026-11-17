@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Lưu và đọc kết quả cận lâm sàng giả lập; chống trùng bằng ràng buộc duy nhất (nguồn, mã kết quả, phiên bản).
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 10/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.repository;
 
 import java.util.List;

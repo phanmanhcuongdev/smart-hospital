@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Đường dẫn liệt kê thuốc cho form kê đơn.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import java.util.List;

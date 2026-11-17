@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Entity ánh xạ bảng emr.clinical_observation: lưu sinh hiệu và quan sát lâm sàng kèm nguồn, đơn vị và chất lượng.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import jakarta.persistence.*;

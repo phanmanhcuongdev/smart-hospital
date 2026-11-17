@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ hồ sơ bệnh án: chốt phiên bản, nộp, trả về sửa, khóa demo, bổ sung sau khóa, kiểm tra expectedVersion và ghi audit.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 09/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.util.List;

@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ sinh hiệu: chỉ ghi khi đang khám, giá trị số phải có đơn vị, thời điểm đo không ở tương lai.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.math.BigDecimal;

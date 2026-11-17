@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ chỉ định cận lâm sàng: tạo chỉ định, đổi trạng thái theo quy tắc, ghi audit.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.util.List;

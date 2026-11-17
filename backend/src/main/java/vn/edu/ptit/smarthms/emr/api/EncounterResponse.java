@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Dữ liệu trả về của lần khám cho client.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import java.time.OffsetDateTime;

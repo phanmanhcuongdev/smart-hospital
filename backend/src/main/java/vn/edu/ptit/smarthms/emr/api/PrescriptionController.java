@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Các đường dẫn tạo đơn thuốc kèm dòng thuốc, thêm dòng, phát hành, hủy và xem đơn.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.api;
 
 import jakarta.validation.Valid;

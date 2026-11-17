@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Entity ánh xạ bảng emr.medical_record: tạo hồ sơ nháp, tăng phiên bản, nộp để ký, trả về sửa và khóa demo.
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 09/11/2026, 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.domain;
 
 import jakarta.persistence.*;

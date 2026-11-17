@@ -1,3 +1,8 @@
+/**
+ * Mô tả: Nghiệp vụ đơn thuốc: tạo đơn kèm các dòng thuốc trong một giao dịch, phát hành, hủy và cảnh báo dị ứng (chỉ cảnh báo, không chặn).
+ * Người thực hiện: Trần Duy Hiếu
+ * Ngày thực hiện: 08/11/2026 (cập nhật 09/11/2026, 10/11/2026)
+ */
 package vn.edu.ptit.smarthms.emr.service;
 
 import java.math.BigDecimal;
